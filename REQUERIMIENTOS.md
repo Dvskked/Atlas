@@ -144,4 +144,4 @@ Aunque usemos capas gratuitas para el curso, estimen qué costaría en "producci
 ---
 
 > ✅ **Entregable de la Clase 06 (inscripción):** este archivo lleno y subido al repo del equipo
-> (commit del PM o del DevOps). Sin él, el equipo no participa por el premio.
+> (commit del PM o del DevOps). Sin él, el equipo no participa por el premio.........
