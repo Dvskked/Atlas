@@ -460,6 +460,112 @@
     font-size: 13px;
 }
 
+.author-section {
+    padding: 30px;
+    margin-bottom: 24px;
+    border: 1px solid #1e3f66;
+    border-radius: 18px;
+    background: #0b1a30;
+}
+
+.author-layout {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.author-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    padding: 28px 22px;
+    border-radius: 16px;
+    background: #112448;
+    border: 1px solid #1e3f66;
+}
+
+.author-avatar {
+    width: 82px;
+    height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: #193a63;
+    border: 1px solid rgba(0,229,255,0.35);
+    color: #00e5ff;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.author-card h4 {
+    color: #eef5ff;
+    font-size: 20px;
+}
+
+.author-card span {
+    color: #7a8dac;
+    font-size: 13px;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 14px;
+    padding: 10px 20px;
+    border-radius: 9px;
+    background: rgba(0,229,255,0.12);
+    border: 1px solid rgba(0,229,255,0.3);
+    color: #00e5ff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.github-link:hover {
+    background: rgba(0,229,255,0.22);
+    transform: translateY(-2px);
+}
+
+.author-projects {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px;
+}
+
+.project-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #112448;
+    border: 1px solid #1e3f66;
+    text-decoration: none;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.project-chip:hover {
+    transform: translateY(-2px);
+    border-color: #2a5db0;
+}
+
+.project-chip strong {
+    color: #eef5ff;
+    font-size: 15px;
+}
+
+.project-chip span {
+    color: #748078;
+    font-size: 12px;
+}
+
 .purpose-section,
 .points-system {
     padding: 30px;
@@ -736,6 +842,10 @@
     }
 
     .points-rules {
+        grid-template-columns: 1fr;
+    }
+
+    .author-layout {
         grid-template-columns: 1fr;
     }
 }
