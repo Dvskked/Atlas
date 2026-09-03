@@ -4,11 +4,13 @@ from mysql.connector import Error
 def obtener_conexion():
     try:
         conexion = mysql.connector.connect(
-            host="bcbuhydxsy4laalvcgvo-mysql.services.clever-cloud.com",
-            user="uedp1u5czob44lvw", # El usuario que te muestra Clever Cloud en la pestaña Information
-            password="2sbxorADR3e7iOgS7ZH3", # La contraseña que te muestra Clever Cloud en la pestaña Information
-            database="bcbuhydxsy4laalvcgvo",
+            host="################",
+            user="$$$$$$$$$$$$$$$", 
+            password="%%%%%%%%%%%%%%%%%%", 
+            database="&&&&&&&&&&&&&&&&&&&&&",
             port=3306
+
+            # no crack, no tendras acceso a mi base de datos JALDJASDAK
         )
         return conexion
     except Error as e:
