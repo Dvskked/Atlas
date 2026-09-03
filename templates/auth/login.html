@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión | Atlas{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-container">
+
+        <!-- PANEL IZQUIERDO -->
+        <section class="auth-brand">
+
+            <div class="logo-container">
+                <!-- Aquí irá el logo real -->
+                <div class="logo-placeholder">
+                    <img
+                        src="{{ url_for('static', filename='img/logo.png') }}"
+                        alt="Logo de Atlas"
+                    >
+                </div>
+            </div>
+
+            <h1>Atlas</h1>
+
+            <p>
+                Sistema de Gestión Inteligente
+                de Recolección de Reciclaje
+            </p>
+
+            <div class="brand-line"></div>
+
+            <span class="brand-description">
+                Recicla. Suma. Transforma.
+            </span>
+
+        </section>
+
+
+        <!-- PANEL DERECHO -->
+        <section class="auth-form-section">
+
+            <div class="auth-form-container">
+
+                <h2>Iniciar sesión</h2>
+
+                <p class="form-description">
+                    Ingresa con tu número de identificación.
+                </p>
+
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form
+                    action="{{ url_for('login') }}"
+                    method="POST"
+                    autocomplete="off"
+                >
+
+                    <div class="form-group">
+                        <label for="numero_identificacion">
+                            Número de identificación
+                        </label>
+                        <input
+                            type="number"
+                            id="numero_identificacion"
+                            name="numero_identificacion"
+                            placeholder="Ingresa tu identificación"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="30"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            required
+                        >
+                    </div>
+
+
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        Iniciar sesión
+                    </button>
+
+                </form>
+
+
+                <div class="form-footer">
+
+                    <span>
+                        ¿No tienes una cuenta?
+                    </span>
+
+                    <a href="{{ url_for('register') }}">
+                        Crear cuenta
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+{% endblock %}

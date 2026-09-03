@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Reciclajes | Atlas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_usuarios.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-reciclajes.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    <button class="mobile-hamburger" id="mobile-hamburger" aria-label="Abrir menú">&#9776;</button>
+    <aside class="admin-sidebar" id="mobile-sidebar">
+        <div class="admin-brand">
+            <div class="admin-logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Atlas">
+            </div>
+            <h1>Atlas</h1>
+            <p>Panel administrativo</p>
+        </div>
+
+        <nav class="admin-nav">
+            <span class="admin-menu-title">MENÚ ADMINISTRATIVO</span>
+            <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item">
+                <span class="admin-nav-icon">⌂</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin_usuarios') }}" class="admin-nav-item">
+                <span class="admin-nav-icon">♙</span>
+                <span>Gestión de usuarios</span>
+            </a>
+            <a href="{{ url_for('admin_reciclajes') }}" class="admin-nav-item active">
+                <span class="admin-nav-icon">♻</span>
+                <span>Reciclajes</span>
+            </a>
+            <a href="{{ url_for('admin_movimientos') }}" class="admin-nav-item">
+                <span class="admin-nav-icon">⇄</span>
+                <span>Movimientos</span>
+            </a>
+            <a href="{{ url_for('admin_catalogo') }}" class="admin-nav-item">
+                <span class="admin-nav-icon">▣</span>
+                <span>Catálogo</span>
+            </a>
+            <a href="{{ url_for('admin_auditorias') }}" class="admin-nav-item">
+                <span class="admin-nav-icon">◷</span>
+                <span>Auditorías</span>
+            </a>
+        </nav>
+
+        <div class="admin-sidebar-bottom">
+            <div class="admin-user-box">
+                <div class="admin-avatar">
+                    {{ session["nombre_completo"][0] }}
+                </div>
+                <div class="admin-user-info">
+                    <strong>{{ session["nombre_completo"] }}</strong>
+                    <span>ADMINISTRADOR</span>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="admin-logout">
+                <span>↪</span>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-page-header">
+            <div>
+                <span class="page-label">ADMINISTRACIÓN</span>
+                <h2>Reciclajes</h2>
+                <p>Consulta y supervisa los reciclajes registrados mediante el sistema de inteligencia artificial.</p>
+            </div>
+            <div class="admin-header-user">
+                <div class="admin-header-avatar">
+                    {{ session["nombre_completo"][0] }}
+                </div>
+                <div>
+                    <strong>{{ session["nombre_completo"] }}</strong>
+                    <span>ADMINISTRADOR</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="recycling-stats">
+            <div class="recycling-stat-card">
+                <span>ANÁLISIS</span>
+                <strong>{{ total_general }}</strong>
+                <p>Análisis realizados</p>
+            </div>
+
+            <div class="recycling-stat-card">
+                <span>BOTELLAS</span>
+                <strong>{{ reciclajes|selectattr("botella_detectada")|list|length }}</strong>
+                <p>Botellas detectadas</p>
+            </div>
+
+            <div class="recycling-stat-card">
+                <span>PUNTOS</span>
+                <strong>{{ reciclajes|sum(attribute="puntos_totales") }}</strong>
+                <p>AtlasPuntos entregados</p>
+            </div>
+
+            <div class="recycling-stat-card">
+                <span>CONFIANZA</span>
+                <strong>{{ "%.1f"|format(reciclajes|map(attribute="confianza")|sum / (reciclajes|length or 1)) }}%</strong>
+                <p>Promedio IA</p>
+            </div>
+        </section>
+
+        <section class="recycling-container">
+            <div class="recycling-header">
+                <div>
+                    <span class="card-label">REGISTROS DE ANÁLISIS IA</span>
+                    <h3>Actividad de reciclaje</h3>
+                    <p>
+                        {% if ver_todos %}
+                            Mostrando todo el historial ({{ total_general }} registros).
+                        {% else %}
+                            Mostrando los últimos {{ reciclajes|length }} de {{ total_general }} registros.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="recycling-toolbar">
+                    <form class="recycling-date-form" method="GET" action="{{ url_for('admin_reciclajes') }}" autocomplete="off">
+                        <div class="date-field">
+                            <label>Desde</label>
+                            <input type="date" name="desde" value="{{ fecha_desde|default('') }}">
+                        </div>
+                        <div class="date-field">
+                            <label>Hasta</label>
+                            <input type="date" name="hasta" value="{{ fecha_hasta|default('') }}">
+                        </div>
+                        <input type="hidden" name="limite" value="{% if ver_todos %}all{% endif %}">
+                        <button type="submit" class="recycling-filter-btn">Aplicar</button>
+                    </form>
+                    <div class="recycling-view-actions">
+                        <a class="recycling-export-btn" href="{{ url_for('admin_exportar_reciclajes_pdf', desde=fecha_desde, hasta=fecha_hasta) }}">Exportar PDF</a>
+                        {% if ver_todos %}
+                            <a class="recycling-view-btn" href="{{ url_for('admin_reciclajes') }}">Mostrar últimos 10</a>
+                        {% else %}
+                            <a class="recycling-view-btn" href="{{ url_for('admin_reciclajes', limite='all') }}">Ver todos ({{ total_general }})</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="recycling-table-container">
+                {% if reciclajes %}
+                    <table class="recycling-table">
+                        <thead>
+                            <tr>
+                                <th>USUARIO</th>
+                                <th>COMPROBANTE</th>
+                                <th>DETECCIONES</th>
+                                <th>CONFIANZA</th>
+                                <th>PUNTOS</th>
+                                <th>FECHA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reciclaje in reciclajes %}
+                                <tr>
+                                    <td>
+                                        <div class="recycling-user">
+                                            <div class="recycling-avatar">
+                                                {{ reciclaje.nombre_completo[0] }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ reciclaje.nombre_completo }}</strong>
+                                                <span>{{ reciclaje.numero_identificacion }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if reciclaje.numero_comprobante %}
+                                            <span class="ia-badge">{{ reciclaje.numero_comprobante }}</span>
+                                        {% else %}
+                                            <span class="ia-badge pending">Sin comprobante</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="detection-tags">
+                                            {% if reciclaje.botella_detectada %}
+                                                <span class="match-badge">Botella</span>
+                                            {% endif %}
+                                            {% if reciclaje.tapa_detectada %}
+                                                <span class="match-badge">Tapa</span>
+                                            {% endif %}
+                                            {% if reciclaje.etiqueta_detectada %}
+                                                <span class="match-badge">Etiqueta</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="ia-badge">{{ "%.1f"|format(reciclaje.confianza) }}%</span>
+                                    </td>
+                                    <td>
+                                        <div class="recycling-points">
+                                            <strong>+{{ reciclaje.puntos_totales }}</strong>
+                                            <span>AtlasPuntos</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="recycling-date">{{ reciclaje.fecha_analisis }}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-recycling">
+                        <div class="empty-recycling-icon">♻</div>
+                        <h3>No hay análisis registrados</h3>
+                        <p>Cuando un usuario realice un análisis, aparecerá aquí.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+    </main>
+</div>
+<script>
+(function(){
+    var h=document.getElementById("mobile-hamburger");
+    var s=document.getElementById("mobile-sidebar");
+    var o=document.getElementById("mobile-overlay");
+    if(h&&s&&o){
+        h.addEventListener("click",function(){s.classList.toggle("mobile-open");o.classList.toggle("active");});
+        o.addEventListener("click",function(){s.classList.remove("mobile-open");o.classList.remove("active");});
+    }
+})();
+</script>
+{% endblock %}
