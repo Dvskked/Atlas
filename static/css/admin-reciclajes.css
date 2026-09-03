@@ -1,0 +1,974 @@
+
+/* =========================================================
+   Atlas - ADMINISTRACIÓN DE RECICLAJES
+   TEMA AZUL OSCURO
+   ========================================================= */
+
+
+/* =========================================================
+   FONDO GENERAL
+   ========================================================= */
+
+.admin-main {
+    background: #040a18;
+    color: #d6e5ff;
+}
+
+
+/* =========================================================
+   ESTADÍSTICAS
+   ========================================================= */
+
+.recycling-stats {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
+
+    margin-bottom: 22px;
+}
+
+
+.recycling-stat-card {
+
+    padding: 21px;
+
+    background: #09110b;
+
+    border: 1px solid #17345c;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.20);
+
+    transition:
+        background 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.25s ease;
+}
+
+
+.recycling-stat-card:hover {
+
+    transform: translateY(-2px);
+
+    background: #0b1526;
+
+    border-color: #2a5b8f;
+}
+
+
+.recycling-stat-card span {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #627ea0;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 1px;
+}
+
+
+.recycling-stat-card strong {
+
+    display: block;
+
+    color: #e9f1ff;
+
+    font-size: 28px;
+
+    font-weight: 700;
+
+    line-height: 1.1;
+}
+
+
+.recycling-stat-card p {
+
+    margin: 6px 0 0;
+
+    color: #4e6488;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   CONTENEDOR PRINCIPAL
+   ========================================================= */
+
+.recycling-container {
+
+    margin-bottom: 22px;
+
+    overflow: hidden;
+
+    background: #09110b;
+
+    border: 1px solid #17345c;
+
+    border-radius: 17px;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================================
+   CABECERA DEL CONTENEDOR
+   ========================================================= */
+
+.recycling-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 25px;
+
+    background: #09110b;
+
+    border-bottom: 1px solid #17345c;
+}
+
+
+.recycling-header .card-label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #5c7c9e;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 1.5px;
+}
+
+
+.recycling-header h3 {
+
+    margin: 0;
+
+    color: #e9f1ff;
+
+    font-size: 21px;
+
+    font-weight: 700;
+}
+
+
+.recycling-header p {
+
+    margin: 7px 0 0;
+
+    color: #627ea0;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+
+.recycling-table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    background: #09110b;
+}
+
+
+.recycling-table {
+
+    width: 100%;
+
+    min-width: 950px;
+
+    border-collapse: collapse;
+
+    background: #09110b;
+}
+
+
+/* CABECERA TABLA */
+
+.recycling-table thead {
+
+    background: #070d08;
+}
+
+
+.recycling-table th {
+
+    padding: 14px 18px;
+
+    text-align: left;
+
+    color: #5c7c9e;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.8px;
+
+    border-bottom: 1px solid #17345c;
+
+    white-space: nowrap;
+}
+
+
+/* CELDAS */
+
+.recycling-table td {
+
+    padding: 16px 18px;
+
+    color: #a3b9d9;
+
+    font-size: 13px;
+
+    vertical-align: middle;
+
+    background: #09110b;
+
+    border-bottom: 1px solid #153053;
+}
+
+
+/* FILA HOVER */
+
+.recycling-table tbody tr {
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.recycling-table tbody tr:hover td {
+
+    background: #0d2038;
+
+    color: #bcd0ea;
+}
+
+
+.recycling-table tbody tr:last-child td {
+
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   USUARIO
+   ========================================================= */
+
+.recycling-user {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+
+.recycling-avatar {
+
+    width: 36px;
+
+    height: 36px;
+
+    min-width: 36px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #111d13;
+
+    border: 1px solid #1e4268;
+
+    color: #00e5ff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+
+.recycling-user strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #c6d9f2;
+
+    font-size: 13px;
+}
+
+
+.recycling-user span {
+
+    display: block;
+
+    color: #5a7394;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   BOTELLA
+   ========================================================= */
+
+.bottle-info strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #c6d9f2;
+
+    font-size: 13px;
+}
+
+
+.bottle-info span {
+
+    color: #5a7394;
+
+    font-size: 11px;
+}
+
+
+.unknown-bottle {
+
+    color: #455c78;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   BADGES IA
+   ========================================================= */
+
+.detection-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.ia-badge,
+.match-badge,
+.pending-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 5px 9px;
+
+    border-radius: 20px;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+
+/* IA IDENTIFICADA */
+
+.ia-badge {
+
+    background: #0d2038;
+
+    border: 1px solid #203c24;
+
+    color: #00e5ff;
+}
+
+
+/* IA PENDIENTE */
+
+.ia-badge.pending {
+
+    background: #102344;
+
+    border: 1px solid #202a21;
+
+    color: #6680a6;
+}
+
+
+/* COINCIDE */
+
+.match-badge {
+
+    background: #0d2038;
+
+    border: 1px solid #203c24;
+
+    color: #00e5ff;
+}
+
+
+/* NO COINCIDE */
+
+.match-badge.no-match {
+
+    background: #1b0e0e;
+
+    border: 1px solid #3b1c1c;
+
+    color: #ff7c7c;
+}
+
+
+/* PENDIENTE */
+
+.pending-status {
+
+    background: #1b160a;
+
+    border: 1px solid #3a3018;
+
+    color: #d8b85a;
+}
+
+
+/* =========================================================
+   PUNTOS
+   ========================================================= */
+
+.recycling-points strong {
+
+    display: block;
+
+    color: #00e5ff;
+
+    font-size: 15px;
+
+    font-weight: 700;
+}
+
+
+.recycling-points span {
+
+    display: block;
+
+    margin-top: 2px;
+
+    color: #4e6488;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+}
+
+
+/* =========================================================
+   FECHA
+   ========================================================= */
+
+.recycling-date {
+
+    color: #5a7394;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   SIN REGISTROS
+   ========================================================= */
+
+.empty-recycling {
+
+    min-height: 280px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 60px 20px;
+
+    text-align: center;
+
+    background: #09110b;
+}
+
+
+.empty-recycling-icon {
+
+    width: 55px;
+
+    height: 55px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-bottom: 14px;
+
+    border-radius: 50%;
+
+    background: #112544;
+
+    border: 1px solid #1c3220;
+
+    color: #00e5ff;
+
+    font-size: 22px;
+}
+
+
+.empty-recycling h3 {
+
+    margin: 0;
+
+    color: #c6d9f2;
+
+    font-size: 15px;
+}
+
+
+.empty-recycling p {
+
+    max-width: 280px;
+
+    margin: 7px 0 0;
+
+    color: #4e6488;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOTELLAS PENDIENTES
+   ========================================================= */
+
+.pending-list {
+
+    padding: 0;
+
+    background: #09110b;
+}
+
+
+.pending-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 16px 24px;
+
+    background: #09110b;
+
+    border-bottom: 1px solid #153053;
+
+    transition:
+        background 0.2s ease;
+}
+
+
+.pending-item:hover {
+
+    background: #0d2038;
+}
+
+
+.pending-item:last-child {
+
+    border-bottom: none;
+}
+
+
+.pending-icon {
+
+    width: 38px;
+
+    height: 38px;
+
+    min-width: 38px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #102647;
+
+    border: 1px solid #1c4a6e;
+
+    color: #00e5ff;
+
+    font-size: 17px;
+}
+
+
+.pending-info {
+
+    flex: 1;
+}
+
+
+.pending-info strong {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #c6d9f2;
+
+    font-size: 13px;
+}
+
+
+.pending-info span {
+
+    display: block;
+
+    color: #5a7394;
+
+    font-size: 11px;
+}
+
+
+.pending-status {
+
+    background: #1b160a;
+
+    color: #d8b85a;
+
+    border: 1px solid #3a3018;
+}
+
+
+/* =========================================================
+   ESTADO VACÍO DE PENDIENTES
+   ========================================================= */
+
+.empty-pending {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 25px;
+
+    background: #09110b;
+
+    color: #00e5ff;
+
+    font-size: 13px;
+}
+
+
+.empty-pending span {
+
+    font-weight: 700;
+}
+
+
+.empty-pending p {
+
+    margin: 0;
+
+    color: #5a7394;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.recycling-table-container::-webkit-scrollbar {
+
+    height: 8px;
+}
+
+
+.recycling-table-container::-webkit-scrollbar-track {
+
+    background: #040a18;
+}
+
+
+.recycling-table-container::-webkit-scrollbar-thumb {
+
+    background: #1c4a6e;
+
+    border-radius: 10px;
+}
+
+
+.recycling-table-container::-webkit-scrollbar-thumb:hover {
+
+    background: #2a5b8f;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .recycling-stats {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+@media (max-width: 800px) {
+
+    .recycling-header {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        padding: 20px;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .recycling-stats {
+
+        grid-template-columns: 1fr;
+    }
+
+
+    .recycling-header {
+
+        padding: 18px;
+    }
+
+
+    .pending-item {
+
+        padding: 14px 18px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .recycling-container {
+
+        border-radius: 13px;
+    }
+
+
+    .recycling-stat-card {
+
+        padding: 18px;
+    }
+
+}
+
+/* ==========================================
+   BARRA DE HERRAMIENTAS RECICLAJES
+   ========================================== */
+.recycling-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.recycling-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.recycling-date-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: linear-gradient(145deg, #0a1628, #0e2038);
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.date-field label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #7a8dac;
+}
+
+.date-field input[type="date"] {
+  padding: 8px 10px;
+  background: #050e1c;
+  border: 1px solid #1d3452;
+  border-radius: 8px;
+  color: #e9f1ff;
+  font-size: 13px;
+  outline: none;
+  color-scheme: dark;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.date-field input[type="date"]:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
+
+.recycling-filter-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #00e5ff, #2f6bff);
+  color: #050e1c;
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 5px 14px rgba(0, 229, 255, 0.22);
+}
+
+.recycling-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 229, 255, 0.32);
+}
+
+.recycling-view-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.recycling-export-btn,
+.recycling-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.recycling-export-btn {
+  background: linear-gradient(135deg, #ff4d6d, #ff6b81);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(255, 77, 109, 0.25);
+}
+
+.recycling-export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(255, 77, 109, 0.35);
+}
+
+.recycling-view-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid #1d3452;
+  color: #7a8dac;
+}
+
+.recycling-view-btn:hover {
+  border-color: #00e5ff;
+  color: #00e5ff;
+}
+
+@media (max-width: 860px) {
+  .recycling-header {
+    flex-direction: column;
+  }
+
+  .recycling-toolbar {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recycling-date-form {
+    width: 100%;
+  }
+
+  .recycling-view-actions {
+    width: 100%;
+  }
+
+  .recycling-export-btn,
+  .recycling-view-btn {
+    flex: 1;
+  }
+}
