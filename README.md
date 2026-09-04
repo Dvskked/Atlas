@@ -175,3 +175,5 @@ Definido en `render.yaml` y `Procfile`. La conexión a la base de datos se reali
 | ADMINISTRADOR | Gestión completa del sistema (usuarios, puntos, catálogo, canjes, auditoría) |
 
 Los perfiles de registro (Aprendiz, Instructor, Área Administrativa y Externo) permiten identificar el tipo de usuario dentro de la institución.
+
+autor: Andrés Forero - promesa del desarrollo de software y analítica de datos
