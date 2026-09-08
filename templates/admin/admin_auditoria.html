@@ -143,7 +143,7 @@
                     <tr>
                         <th class="ranking-th-pos">#</th>
                         <th class="ranking-th-user">USUARIO</th>
-                        <th class="ranking-th-ficha">FICHA</th>
+                        <th class="ranking-th-ficha">IDENTIFICACIÓN</th>
                         <th class="ranking-th-analisis">ANÁLISIS IA</th>
                         <th class="ranking-th-puntos">AtlasPuntos</th>
                     </tr>
@@ -223,10 +223,9 @@
                 <table class="activity-table">
                     <thead>
                         <tr>
+                            <th>NOMBRE</th>
                             <th>USUARIO</th>
-                            <th>FICHA</th>
                             <th>IDENTIFICACIÓN</th>
-                            <th>ROL</th>
                             <th>CORREO</th>
                             <th>PUNTOS</th>
                         </tr>
@@ -238,11 +237,8 @@
                                 <div class="act-avatar">{{ u.nombre_completo[0] }}</div>
                                 <strong>{{ u.nombre_completo }}</strong>
                             </td>
-                            <td class="act-id">{{ u.numero_ficha or '—' }}</td>
+                            <td class="act-id">{{ u.usuario }}</td>
                             <td class="act-id">{{ u.numero_identificacion }}</td>
-                            <td>
-                                <span class="act-tipo act-tipo-registro">{{ u.rol or 'USUARIO' }}</span>
-                            </td>
                             <td class="act-email">{{ u.correo }}</td>
                             <td class="act-points">
                                 <span class="act-points-val">{{ u.puntos_totales }}</span>
