@@ -279,6 +279,20 @@ select {
 }
 
 
+.form-hint {
+
+    display: block;
+
+    color: #5a6c8e;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+
+    margin-top: 7px;
+}
+
+
 /* =========================================
    FORM
 ========================================= */

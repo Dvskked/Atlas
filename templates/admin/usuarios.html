@@ -123,26 +123,12 @@
             <div class="users-filters">
                 <form class="users-filter-form" method="GET" action="{{ url_for('admin_usuarios') }}" autocomplete="off">
                     <div class="filter-field">
-                        <label>Usuario</label>
+                        <label>Nombre</label>
                         <input type="text" name="usuario" placeholder="Buscar por nombre" value="{{ filtro_usuario|default('') }}">
                     </div>
                     <div class="filter-field">
                         <label>Identificación</label>
                         <input type="number" name="identificacion" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Solo números" value="{{ filtro_identificacion|default('') }}">
-                    </div>
-                    <div class="filter-field">
-                        <label>Rol</label>
-                        <select name="rol">
-                            <option value="">Todos</option>
-                            <option value="APRENDIZ" {% if filtro_rol|default('') == 'APRENDIZ' %}selected{% endif %}>Aprendiz</option>
-                            <option value="INSTRUCTOR" {% if filtro_rol|default('') == 'INSTRUCTOR' %}selected{% endif %}>Instructor</option>
-                            <option value="AREA_ADMINISTRATIVA" {% if filtro_rol|default('') == 'AREA_ADMINISTRATIVA' %}selected{% endif %}>Administración</option>
-                            <option value="EXTERNO" {% if filtro_rol|default('') == 'EXTERNO' %}selected{% endif %}>Externo</option>
-                        </select>
-                    </div>
-                    <div class="filter-field">
-                        <label>Programa / Ficha</label>
-                        <input type="text" name="programa_ficha" placeholder="Programa o ficha" value="{{ filtro_programa|default('') }}">
                     </div>
                     <div class="filter-actions">
                         <button type="submit" class="filter-apply">Filtrar</button>
@@ -156,10 +142,9 @@
                     <table class="users-table">
                         <thead>
                             <tr>
+                                <th>NOMBRE</th>
                                 <th>USUARIO</th>
                                 <th>IDENTIFICACIÓN</th>
-                                <th>ROL</th>
-                                <th>PROGRAMA / FICHA</th>
                                 <th>TIPO</th>
                                 <th>AtlasPuntos</th>
                                 <th>ESCANEOS IA</th>
@@ -180,16 +165,10 @@
                                             </div>
                                         </div>
                                     </td>
+                                    <td>
+                                        <span class="role-badge">{{ usuario.usuario }}</span>
+                                    </td>
                                     <td>{{ usuario.numero_identificacion }}</td>
-                                    <td>
-                                        <span class="role-badge">{{ usuario.rol }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="formation-info">
-                                            <strong>{{ usuario.programa_formacion }}</strong>
-                                            <span>Ficha {{ usuario.numero_ficha }}</span>
-                                        </div>
-                                    </td>
                                     <td>
                                         {% if usuario.tipo_usuario == "ADMINISTRADOR" %}
                                             <span class="type-badge admin">ADMINISTRADOR</span>
@@ -214,13 +193,11 @@
                                             onclick="abrirModalUsuario({
                                                 id: {{ usuario.id_usuario }},
                                                 nombre: '{{ usuario.nombre_completo | e }}',
+                                                usuario: '{{ usuario.usuario | e }}',
                                                 identificacion: '{{ usuario.numero_identificacion | e }}',
                                                 correo: '{{ usuario.correo | e }}',
                                                 telefono: '{{ usuario.telefono | e }}',
-                                                rol: '{{ usuario.rol | e }}',
                                                 tipo: '{{ usuario.tipo_usuario | e }}',
-                                                programa: '{{ usuario.programa_formacion | e }}',
-                                                ficha: '{{ usuario.numero_ficha | e }}',
                                                 puntos: {{ usuario.puntos_totales }},
                                                 escaneos: {{ usuario.escaneos_ia }},
                                                 esAdmin: {{ 'true' if usuario.id_usuario == session['id_usuario'] else 'false' }}
@@ -277,6 +254,10 @@
                         <input type="text" name="nombre_completo" id="m-nombre" required>
                     </div>
                     <div class="form-group">
+                        <label>Usuario</label>
+                        <input type="text" name="usuario" id="m-usuario" minlength="3" maxlength="50" pattern="[A-Za-z0-9_.-]{3,50}" required>
+                    </div>
+                    <div class="form-group">
                         <label>Identificación</label>
                         <input type="number" name="numero_identificacion" id="m-identificacion" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                     </div>
@@ -289,15 +270,6 @@
                         <input type="text" name="telefono" id="m-telefono">
                     </div>
                     <div class="form-group">
-                        <label>Rol</label>
-                        <select name="rol" id="m-rol" required>
-                            <option value="APRENDIZ">Aprendiz</option>
-                            <option value="INSTRUCTOR">Instructor</option>
-                            <option value="AREA_ADMINISTRATIVA">Administración</option>
-                            <option value="EXTERNO">Externo</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label>Tipo de usuario</label>
                         <select name="tipo_usuario" id="m-tipo" required>
                             <option value="USUARIO">Usuario</option>
@@ -305,12 +277,8 @@
                         </select>
                     </div>
                     <div class="form-group full">
-                        <label>Programa de formación</label>
-                        <input type="text" name="programa_formacion" id="m-programa" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Número de ficha</label>
-                        <input type="number" name="numero_ficha" id="m-ficha" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                        <label>Nueva contraseña (opcional, se guarda como hash)</label>
+                        <input type="password" name="contrasena" id="m-contrasena" placeholder="Déjalo vacío para no cambiarla" minlength="8" maxlength="255">
                     </div>
                 </div>
                 <div class="modal-usuario-actions">
@@ -378,13 +346,12 @@ function abrirModalUsuario(u) {
     document.getElementById("modal-usuario-escaneos").textContent = u.escaneos;
 
     document.getElementById("m-nombre").value = u.nombre;
+    document.getElementById("m-usuario").value = u.usuario;
     document.getElementById("m-identificacion").value = u.identificacion;
     document.getElementById("m-correo").value = u.correo;
     document.getElementById("m-telefono").value = u.telefono;
-    document.getElementById("m-rol").value = u.rol;
+    document.getElementById("m-contrasena").value = "";
     document.getElementById("m-tipo").value = u.tipo;
-    document.getElementById("m-programa").value = u.programa;
-    document.getElementById("m-ficha").value = u.ficha;
 
     document.getElementById("form-editar-usuario").action = "/admin/usuarios/editar/" + u.id;
     document.getElementById("form-agregar-puntos").action = "/admin/usuarios/puntos/agregar/" + u.id;

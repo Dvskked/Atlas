@@ -152,81 +152,75 @@
                     </div>
 
 
-                    <!-- ROL -->
+                    <!-- USUARIO -->
                     <div class="form-group">
 
-                        <label for="rol">
-                            Rol
-                        </label>
-
-                        <select
-                            id="rol"
-                            name="rol"
-                            required
-                        >
-
-                            <option value="" selected disabled>
-                                Selecciona tu rol
-                            </option>
-
-                            <option value="APRENDIZ">
-                                Aprendiz
-                            </option>
-
-                            <option value="INSTRUCTOR">
-                                Instructor
-                            </option>
-
-                            <option value="AREA_ADMINISTRATIVA">
-                                Área administrativa
-                            </option>
-
-                            <option value="EXTERNO">
-                                Externo
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <!-- PROGRAMA -->
-                    <div class="form-group">
-
-                        <label for="programa_formacion">
-                            Programa de formación
+                        <label for="usuario">
+                            Nombre de usuario
                         </label>
 
                         <input
                             type="text"
-                            id="programa_formacion"
-                            name="programa_formacion"
-                            placeholder="Ej: Análisis y Desarrollo de Software"
-                            maxlength="150"
+                            id="usuario"
+                            name="usuario"
+                            placeholder="Ej: maria_gomez"
+                            minlength="3"
+                            maxlength="50"
+                            pattern="[A-Za-z0-9_.-]{3,50}"
+                            autocomplete="username"
                             required
                         >
+
+                        <small class="form-hint">
+                            Solo letras, números, puntos y guiones
+                            (3 a 50 caracteres).
+                        </small>
 
                     </div>
 
 
-                    <!-- FICHA -->
+                    <!-- CONTRASEÑA -->
                     <div class="form-group">
 
-                        <label for="numero_ficha">
-                            Número de ficha
+                        <label for="contrasena">
+                            Contraseña
                         </label>
 
                         <input
-                            type="number"
-                            id="numero_ficha"
-                            name="numero_ficha"
-                            placeholder="Ej: 3139687"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            pattern="[0-9]*"
-                            maxlength="30"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            type="password"
+                            id="contrasena"
+                            name="contrasena"
+                            placeholder="Mínimo 8 caracteres"
+                            minlength="8"
+                            maxlength="255"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <small class="form-hint">
+                            Mínimo 8 caracteres, con mayúscula,
+                            minúscula y número. Solo se guarda
+                            un hash seguro, nunca el texto.
+                        </small>
+
+                    </div>
+
+
+                    <!-- CONFIRMAR CONTRASEÑA -->
+                    <div class="form-group">
+
+                        <label for="confirmar_contrasena">
+                            Confirmar contraseña
+                        </label>
+
+                        <input
+                            type="password"
+                            id="confirmar_contrasena"
+                            name="confirmar_contrasena"
+                            placeholder="Repite tu contraseña"
+                            minlength="8"
+                            maxlength="255"
+                            autocomplete="new-password"
                             required
                         >
 
