@@ -21,6 +21,9 @@ from flask import (
 
 from io import BytesIO
 from datetime import datetime
+import re
+
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
@@ -39,6 +42,30 @@ from reportlab.platypus import (
 from ultralytics import YOLO
 
 from conexion import obtener_conexion
+
+
+def validar_contrasena(contrasena):
+    """Valida una contraseña con una política mínima de seguridad.
+
+    Requisitos:
+      - Mínimo 8 caracteres
+      - Al menos una mayúscula
+      - Al menos una minúscula
+      - Al menos un número
+    """
+    if not contrasena or len(contrasena) < 8 or len(contrasena) > 255:
+        return False
+
+    if not re.search(r"[A-Z]", contrasena):
+        return False
+
+    if not re.search(r"[a-z]", contrasena):
+        return False
+
+    if not re.search(r"[0-9]", contrasena):
+        return False
+
+    return True
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +101,10 @@ except Exception as e:
     print("======================================")
 
 app = Flask(__name__)
-app.secret_key = "Atlas_CAMBIAR_ESTA_CLAVE"
+app.secret_key = os.getenv(
+    "ATLAS_SECRET_KEY",
+    "Atlas_CAMBIAR_ESTA_CLAVE"
+)
 
 cors_origins = [
     origin.strip()
@@ -111,14 +141,25 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        numero_identificacion = request.form.get("numero_identificacion", "").strip()
+        usuario = request.form.get("usuario", "").strip()
+        contrasena = request.form.get("contrasena", "")
 
-        if not numero_identificacion:
-            flash("Debes ingresar tu número de identificación.", "danger")
+        if not usuario or not contrasena:
+            flash("Debes ingresar tu usuario y contraseña.", "danger")
             return redirect(url_for("login"))
 
-        if not numero_identificacion.isdigit():
-            flash("La identificación debe contener solo números.", "danger")
+        # Validaciones básicas del nombre de usuario.
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{3,50}", usuario):
+            flash(
+                "El usuario solo puede contener letras, números, "
+                "puntos, guiones y debe tener entre 3 y 50 caracteres.",
+                "danger"
+            )
+            return redirect(url_for("login"))
+
+        # Límite de longitud de la contraseña para evitar abuso.
+        if len(contrasena) > 255:
+            flash("La contraseña no puede superar los 255 caracteres.", "danger")
             return redirect(url_for("login"))
 
         conexion = obtener_conexion()
@@ -130,46 +171,56 @@ def login():
         cursor = conexion.cursor(dictionary=True)
 
         try:
+            # Consulta parametrizada: previene inyección SQL.
+            # La contraseña nunca se compara en la base de datos:
+            # se recupera su hash y se verifica con check_password_hash.
             consulta = """
                 SELECT
                     id_usuario,
+                    usuario,
+                    contrasena,
                     numero_identificacion,
                     nombre_completo,
                     correo,
                     telefono,
-                    rol,
-                    programa_formacion,
-                    numero_ficha,
                     tipo_usuario
                 FROM usuarios
-                WHERE numero_identificacion = %s
+                WHERE usuario = %s
+                LIMIT 1
             """
 
             cursor.execute(
                 consulta,
-                (numero_identificacion,)
+                (usuario,)
             )
 
-            usuario = cursor.fetchone()
+            registro = cursor.fetchone()
 
-            if usuario is None:
-                flash("No existe un usuario con esa identificación.", "danger")
+            if registro is None or not check_password_hash(
+                registro["contrasena"],
+                contrasena
+            ):
+                flash(
+                    "Usuario o contraseña incorrectos.",
+                    "danger"
+                )
                 return redirect(url_for("login"))
 
-            session["id_usuario"] = usuario["id_usuario"]
-            session["nombre_completo"] = usuario["nombre_completo"]
-            session["numero_identificacion"] = usuario["numero_identificacion"]
-            session["tipo_usuario"] = usuario["tipo_usuario"]
-            session["rol"] = usuario["rol"]
+            # No guardamos el hash en la sesión.
+            session["id_usuario"] = registro["id_usuario"]
+            session["usuario"] = registro["usuario"]
+            session["nombre_completo"] = registro["nombre_completo"]
+            session["numero_identificacion"] = registro["numero_identificacion"]
+            session["tipo_usuario"] = registro["tipo_usuario"]
 
-            if usuario["tipo_usuario"] == "ADMINISTRADOR":
+            if registro["tipo_usuario"] == "ADMINISTRADOR":
                 return redirect(url_for("admin_dashboard"))
 
             return redirect(url_for("dashboard"))
 
         except Exception as e:
             print("ERROR LOGIN:", e)
-            flash(f"Ocurrió un error al iniciar sesión: {e}", "danger")
+            flash("Ocurrió un error al iniciar sesión.", "danger")
             return redirect(url_for("login"))
 
         finally:
@@ -188,17 +239,17 @@ def register():
         numero_identificacion = request.form.get("numero_identificacion", "").strip()
         correo = request.form.get("correo", "").strip()
         telefono = request.form.get("telefono", "").strip()
-        rol = request.form.get("rol", "").strip()
-        programa_formacion = request.form.get("programa_formacion", "").strip()
-        numero_ficha = request.form.get("numero_ficha", "").strip()
+        usuario = request.form.get("usuario", "").strip()
+        contrasena = request.form.get("contrasena", "")
+        confirmar_contrasena = request.form.get("confirmar_contrasena", "")
 
         if not all([
             nombre_completo,
             numero_identificacion,
             correo,
-            rol,
-            programa_formacion,
-            numero_ficha
+            usuario,
+            contrasena,
+            confirmar_contrasena
         ]):
             flash("Completa todos los campos obligatorios.", "danger")
             return redirect(url_for("register"))
@@ -207,19 +258,26 @@ def register():
             flash("La identificación debe contener solo números.", "danger")
             return redirect(url_for("register"))
 
-        if numero_ficha and not numero_ficha.isdigit():
-            flash("El número de ficha debe contener solo números.", "danger")
+        # Nombre de usuario seguro: solo letras, números, puntos, guiones.
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{3,50}", usuario):
+            flash(
+                "El usuario solo puede contener letras, números, puntos, "
+                "guiones y debe tener entre 3 y 50 caracteres.",
+                "danger"
+            )
             return redirect(url_for("register"))
 
-        roles_validos = [
-            "APRENDIZ",
-            "INSTRUCTOR",
-            "AREA_ADMINISTRATIVA",
-            "EXTERNO"
-        ]
+        # Política mínima de contraseña segura.
+        if not validar_contrasena(contrasena):
+            flash(
+                "La contraseña debe tener al menos 8 caracteres, una "
+                "mayúscula, una minúscula y un número.",
+                "danger"
+            )
+            return redirect(url_for("register"))
 
-        if rol not in roles_validos:
-            flash("El rol seleccionado no es válido.", "danger")
+        if contrasena != confirmar_contrasena:
+            flash("Las contraseñas no coinciden.", "danger")
             return redirect(url_for("register"))
 
         conexion = obtener_conexion()
@@ -231,27 +289,30 @@ def register():
         cursor = conexion.cursor()
 
         try:
+            # Generar el hash de la contraseña: nunca se guarda en texto plano.
+            hash_contrasena = generate_password_hash(contrasena)
+
             consulta = """
                 INSERT INTO usuarios (
+                    usuario,
+                    contrasena,
                     numero_identificacion,
                     nombre_completo,
                     correo,
                     telefono,
-                    rol,
-                    programa_formacion,
-                    numero_ficha
+                    tipo_usuario
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
 
             valores = (
+                usuario,
+                hash_contrasena,
                 numero_identificacion,
                 nombre_completo,
                 correo,
-                telefono,
-                rol,
-                programa_formacion,
-                numero_ficha
+                telefono or None,
+                "USUARIO"
             )
 
             cursor.execute(
@@ -275,12 +336,13 @@ def register():
 
             if "Duplicate entry" in str(e):
                 flash(
-                    "La identificación o el correo ya están registrados.",
+                    "El usuario, la identificación o el correo "
+                    "ya están registrados.",
                     "danger"
                 )
             else:
                 flash(
-                    f"No fue posible crear la cuenta: {e}",
+                    "No fue posible crear la cuenta.",
                     "danger"
                 )
 
@@ -1281,8 +1343,6 @@ def admin_usuarios():
     try:
         filtro_usuario = request.args.get("usuario", "").strip()
         filtro_identificacion = request.args.get("identificacion", "").strip()
-        filtro_rol = request.args.get("rol", "").strip()
-        filtro_programa = request.args.get("programa_ficha", "").strip()
 
         condiciones = []
         parametros = []
@@ -1295,27 +1355,14 @@ def admin_usuarios():
             condiciones.append("u.numero_identificacion = %s")
             parametros.append(filtro_identificacion)
 
-        if filtro_rol:
-            condiciones.append("u.rol = %s")
-            parametros.append(filtro_rol)
-
-        if filtro_programa:
-            condiciones.append(
-                "(u.programa_formacion LIKE %s OR CAST(u.numero_ficha AS CHAR) LIKE %s)"
-            )
-            parametros.append(f"%{filtro_programa}%")
-            parametros.append(f"%{filtro_programa}%")
-
         consulta = """
             SELECT
                 u.id_usuario,
+                u.usuario,
                 u.nombre_completo,
                 u.numero_identificacion,
                 u.correo,
                 u.telefono,
-                u.rol,
-                u.programa_formacion,
-                u.numero_ficha,
                 u.tipo_usuario,
 
                 COALESCE(
@@ -1348,9 +1395,7 @@ def admin_usuarios():
             "admin/usuarios.html",
             usuarios=usuarios,
             filtro_usuario=filtro_usuario,
-            filtro_identificacion=filtro_identificacion,
-            filtro_rol=filtro_rol,
-            filtro_programa=filtro_programa
+            filtro_identificacion=filtro_identificacion
         )
 
     except Exception as e:
@@ -1397,13 +1442,11 @@ def admin_editar_usuario(id_usuario):
             consulta = """
                 SELECT
                     id_usuario,
+                    usuario,
                     numero_identificacion,
                     nombre_completo,
                     correo,
                     telefono,
-                    rol,
-                    programa_formacion,
-                    numero_ficha,
                     tipo_usuario
                 FROM usuarios
                 WHERE id_usuario = %s
@@ -1459,20 +1502,15 @@ def admin_editar_usuario(id_usuario):
             ""
         ).strip()
 
-        rol = request.form.get(
-            "rol",
+        usuario = request.form.get(
+            "usuario",
             ""
         ).strip()
 
-        programa_formacion = request.form.get(
-            "programa_formacion",
+        contrasena = request.form.get(
+            "contrasena",
             ""
-        ).strip()
-
-        numero_ficha = request.form.get(
-            "numero_ficha",
-            ""
-        ).strip()
+        )
 
         tipo_usuario = request.form.get(
             "tipo_usuario",
@@ -1487,9 +1525,7 @@ def admin_editar_usuario(id_usuario):
             nombre_completo,
             numero_identificacion,
             correo,
-            rol,
-            programa_formacion,
-            numero_ficha
+            usuario
         ]):
 
             flash(
@@ -1511,24 +1547,27 @@ def admin_editar_usuario(id_usuario):
             )
             return redirect(url_for("admin_usuarios"))
 
-        if numero_ficha and not numero_ficha.isdigit():
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{3,50}", usuario):
+
             flash(
-                "El número de ficha debe contener solo números.",
+                "El usuario solo puede contener letras, números, puntos, "
+                "guiones y debe tener entre 3 y 50 caracteres.",
                 "danger"
             )
-            return redirect(url_for("admin_usuarios"))
 
-        roles_validos = [
-            "APRENDIZ",
-            "INSTRUCTOR",
-            "AREA_ADMINISTRATIVA",
-            "EXTERNO"
-        ]
+            return redirect(
+                url_for(
+                    "admin_editar_usuario",
+                    id_usuario=id_usuario
+                )
+            )
 
-        if rol not in roles_validos:
+        # Si se proporciona una nueva contraseña, debe cumplir la política.
+        if contrasena and not validar_contrasena(contrasena):
 
             flash(
-                "El rol seleccionado no es válido.",
+                "La contraseña debe tener al menos 8 caracteres, una "
+                "mayúscula, una minúscula y un número.",
                 "danger"
             )
 
@@ -1584,31 +1623,57 @@ def admin_editar_usuario(id_usuario):
         # ACTUALIZAR
         # ==================================
 
-        consulta = """
-            UPDATE usuarios
-            SET
-                numero_identificacion = %s,
-                nombre_completo = %s,
-                correo = %s,
-                telefono = %s,
-                rol = %s,
-                programa_formacion = %s,
-                numero_ficha = %s,
-                tipo_usuario = %s
-            WHERE id_usuario = %s
-        """
+        # Si se indica una nueva contraseña, se actualiza su hash.
+        if contrasena:
+            hash_contrasena = generate_password_hash(contrasena)
 
-        valores = (
-            numero_identificacion,
-            nombre_completo,
-            correo,
-            telefono,
-            rol,
-            programa_formacion,
-            numero_ficha,
-            tipo_usuario,
-            id_usuario
-        )
+            consulta = """
+                UPDATE usuarios
+                SET
+                    usuario = %s,
+                    contrasena = %s,
+                    numero_identificacion = %s,
+                    nombre_completo = %s,
+                    correo = %s,
+                    telefono = %s,
+                    tipo_usuario = %s
+                WHERE id_usuario = %s
+            """
+
+            valores = (
+                usuario,
+                hash_contrasena,
+                numero_identificacion,
+                nombre_completo,
+                correo,
+                telefono,
+                tipo_usuario,
+                id_usuario
+            )
+
+        else:
+
+            consulta = """
+                UPDATE usuarios
+                SET
+                    usuario = %s,
+                    numero_identificacion = %s,
+                    nombre_completo = %s,
+                    correo = %s,
+                    telefono = %s,
+                    tipo_usuario = %s
+                WHERE id_usuario = %s
+            """
+
+            valores = (
+                usuario,
+                numero_identificacion,
+                nombre_completo,
+                correo,
+                telefono,
+                tipo_usuario,
+                id_usuario
+            )
 
         cursor.execute(
             consulta,
@@ -1654,10 +1719,10 @@ def admin_editar_usuario(id_usuario):
         # actualizamos también la sesión.
         if id_usuario == session["id_usuario"]:
 
+            session["usuario"] = usuario
             session["nombre_completo"] = nombre_completo
             session["numero_identificacion"] = numero_identificacion
             session["tipo_usuario"] = tipo_usuario
-            session["rol"] = rol
 
         flash(
             "Usuario actualizado correctamente.",
@@ -1680,7 +1745,8 @@ def admin_editar_usuario(id_usuario):
         if "Duplicate entry" in str(e):
 
             flash(
-                "La identificación o el correo ya pertenecen a otro usuario.",
+                "El usuario, la identificación o el correo "
+                "ya pertenecen a otro usuario.",
                 "danger"
             )
 
@@ -2494,11 +2560,10 @@ def admin_auditorias():
         cursor.execute("""
             SELECT
                 u.id_usuario,
+                u.usuario,
                 u.numero_identificacion,
                 u.nombre_completo,
                 u.correo,
-                u.numero_ficha,
-                u.rol,
 
                 COALESCE(
                     (
@@ -2845,10 +2910,10 @@ def api_buscar_usuario(identificacion):
         cursor.execute("""
             SELECT
                 u.id_usuario,
+                u.usuario,
                 u.numero_identificacion,
                 u.nombre_completo,
                 u.correo,
-                u.rol,
 
                 COALESCE(
                     (
