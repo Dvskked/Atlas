@@ -22,6 +22,11 @@ from flask import (
 from io import BytesIO
 from datetime import datetime
 import re
+import smtplib
+import secrets
+import string
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -66,6 +71,34 @@ def validar_contrasena(contrasena):
         return False
 
     return True
+
+
+def generar_contrasena_temporal():
+    """Genera una contraseña aleatoria que cumple la política mínima."""
+    minusculas = string.ascii_lowercase
+    mayusculas = string.ascii_uppercase
+    numeros = string.digits
+    simbolos = "!@#$%&*"
+
+    # Al menos una de cada grupo requerido.
+    contrasena = (
+        secrets.choice(mayusculas)
+        + secrets.choice(minusculas)
+        + secrets.choice(numeros)
+    )
+
+    # Completar hasta 12 caracteres con una mezcla segura de todos los grupos.
+    todos = minusculas + mayusculas + numeros + simbolos
+    contrasena += "".join(
+        secrets.choice(todos) for _ in range(9)
+    )
+
+    # Mezclamos para que los caracteres requeridos no queden fijos al inicio.
+    lista = list(contrasena)
+    secrets.SystemRandom().shuffle(lista)
+    contrasena = "".join(lista)
+
+    return contrasena
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -127,6 +160,67 @@ def add_cors_headers(response):
         response.headers["Vary"] = "Origin"
 
     return response
+
+# ==========================================
+# ENVÍO DE CORREOS (SMTP)
+# ==========================================
+def enviar_correo(destinatario, asunto, texto_plano):
+    """Envía un correo de texto plano usando SMTP.
+
+    La configuración se toma de variables de entorno:
+
+      ATLAS_SMTP_HOST      (ej. smtp.gmail.com)
+      ATLAS_SMTP_PORT      (ej. 587)
+      ATLAS_SMTP_USER      (correo que envía)
+      ATLAS_SMTP_PASS      (contraseña / app password)
+      ATLAS_SMTP_FROM      (correo remitente, por defecto ATLAS_SMTP_USER)
+      ATLAS_SMTP_TLS       ("1" para STARTTLS, por defecto activo)
+
+    Si no se definen las variables, se usan las credenciales de la cuenta
+    configurada por defecto (Gmail).
+
+    Devuelve True si el correo se envió correctamente, False en caso contrario.
+    """
+    host = os.getenv("ATLAS_SMTP_HOST", "").strip() or "smtp.gmail.com"
+    port = int(os.getenv("ATLAS_SMTP_PORT", "").strip() or "587")
+    usuario = os.getenv("ATLAS_SMTP_USER", "").strip() or "siriusplanet76@gmail.com"
+    contrasena = os.getenv("ATLAS_SMTP_PASS", "").strip() or "bsbk gjwa gthf pean"
+    remitente = os.getenv("ATLAS_SMTP_FROM", "").strip() or usuario
+    usar_tls = os.getenv("ATLAS_SMTP_TLS", "1").strip() == "1"
+
+    if not host or not usuario or not contrasena:
+        print("ERROR CORREO: Faltan variables ATLAS_SMTP_* de configuración.")
+        return False
+
+    if not destinatario or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", destinatario):
+        print("ERROR CORREO: Dirección de destino no válida:", destinatario)
+        return False
+
+    mensaje = MIMEMultipart()
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+    mensaje["Subject"] = asunto
+    mensaje.attach(MIMEText(texto_plano, "plain", "utf-8"))
+
+    try:
+        servidor = smtplib.SMTP(host, port, timeout=30)
+        servidor.ehlo()
+
+        if usar_tls:
+            servidor.starttls()
+            servidor.ehlo()
+
+        servidor.login(usuario, contrasena)
+        servidor.sendmail(remitente, [destinatario], mensaje.as_string())
+        servidor.quit()
+
+        print("CORREO ENVIADO A:", destinatario)
+        return True
+
+    except Exception as e:
+        print("ERROR ENVIANDO CORREO:", e)
+        return False
+
 
 # ==========================================
 # INICIO
@@ -243,6 +337,24 @@ def register():
         contrasena = request.form.get("contrasena", "")
         confirmar_contrasena = request.form.get("confirmar_contrasena", "")
 
+        # Conservamos los datos ingresados para no borrar el formulario
+        # cuando ocurre un error de validación.
+        datos = {
+            "nombre_completo": nombre_completo,
+            "numero_identificacion": numero_identificacion,
+            "correo": correo,
+            "telefono": telefono,
+            "usuario": usuario,
+            "contrasena": contrasena,
+            "confirmar_contrasena": confirmar_contrasena
+        }
+
+        def volver_al_formulario():
+            return render_template(
+                "auth/register.html",
+                datos=datos
+            )
+
         if not all([
             nombre_completo,
             numero_identificacion,
@@ -252,11 +364,11 @@ def register():
             confirmar_contrasena
         ]):
             flash("Completa todos los campos obligatorios.", "danger")
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         if not numero_identificacion.isdigit():
             flash("La identificación debe contener solo números.", "danger")
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         # Nombre de usuario seguro: solo letras, números, puntos, guiones.
         if not re.fullmatch(r"[A-Za-z0-9_.-]{3,50}", usuario):
@@ -265,7 +377,7 @@ def register():
                 "guiones y debe tener entre 3 y 50 caracteres.",
                 "danger"
             )
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         # Política mínima de contraseña segura.
         if not validar_contrasena(contrasena):
@@ -274,17 +386,17 @@ def register():
                 "mayúscula, una minúscula y un número.",
                 "danger"
             )
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         if contrasena != confirmar_contrasena:
             flash("Las contraseñas no coinciden.", "danger")
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         conexion = obtener_conexion()
 
         if conexion is None:
             flash("No fue posible conectar con la base de datos.", "danger")
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         cursor = conexion.cursor()
 
@@ -346,13 +458,378 @@ def register():
                     "danger"
                 )
 
-            return redirect(url_for("register"))
+            return volver_al_formulario()
 
         finally:
             cursor.close()
             conexion.close()
 
     return render_template("auth/register.html")
+
+# ==========================================
+# VERIFICAR DATOS EXISTENTES (REGISTER)
+# ==========================================
+@app.route("/api/verificar-datos", methods=["POST"])
+def api_verificar_datos():
+
+    datos = request.get_json() or {}
+
+    valor = datos.get("valor", "").strip().lower()
+    campo = datos.get("campo", "").strip().lower()
+
+    campos_validos = ["usuario", "correo", "numero_identificacion"]
+
+    if campo not in campos_validos:
+        return jsonify({
+            "error": "Campo no válido."
+        }), 400
+
+    if not valor:
+        return jsonify({
+            "existe": False
+        })
+
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({
+            "error": "Error de conexión."
+        }), 500
+
+    cursor = conexion.cursor()
+
+    try:
+        columna = {
+            "usuario": "usuario",
+            "correo": "correo",
+            "numero_identificacion": "numero_identificacion"
+        }[campo]
+
+        cursor.execute(
+            f"SELECT id_usuario FROM usuarios WHERE LOWER({columna}) = %s LIMIT 1",
+            (valor,)
+        )
+
+        existe = cursor.fetchone() is not None
+
+        return jsonify({
+            "existe": existe
+        })
+
+    except Exception as e:
+        print("ERROR VERIFICAR DATOS:", e)
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+# ==========================================
+# RECUPERAR NOMBRE DE USUARIO
+# ==========================================
+@app.route("/recuperar-usuario", methods=["GET", "POST"])
+def recuperar_usuario():
+
+    if request.method == "POST":
+        correo = request.form.get("correo", "").strip().lower()
+
+        if not correo or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", correo):
+            flash(
+                "Ingresa un correo electrónico válido.",
+                "danger"
+            )
+            return redirect(url_for("recuperar_usuario"))
+
+        conexion = obtener_conexion()
+
+        if conexion is None:
+            flash(
+                "No fue posible conectar con la base de datos.",
+                "danger"
+            )
+            return redirect(url_for("recuperar_usuario"))
+
+        cursor = conexion.cursor(dictionary=True)
+
+        try:
+            cursor.execute(
+                """
+                SELECT usuario, nombre_completo
+                FROM usuarios
+                WHERE LOWER(correo) = %s
+                LIMIT 1
+                """,
+                (correo,)
+            )
+
+            registro = cursor.fetchone()
+
+            if registro is None:
+                flash(
+                    "No hay ningún usuario registrado con ese correo.",
+                    "danger"
+                )
+                return redirect(url_for("recuperar_usuario"))
+
+            nombre_usuario = registro["usuario"]
+            nombre_completo = registro["nombre_completo"]
+
+            asunto = "Tu nombre de usuario - Atlas"
+            texto = (
+                "Hola " + nombre_completo + ",\n\n"
+                "Somos Atlas. Aquí tienes tu nombre de usuario:\n\n"
+                "   Usuario: " + nombre_usuario + "\n\n"
+                "Puedes usarlo para iniciar sesión en el sistema.\n\n"
+                "Si tienes alguna duda, contáctanos.\n"
+                "Atlas - Recicla. Suma. Transforma."
+            )
+
+            if not enviar_correo(correo, asunto, texto):
+                flash(
+                    "Ocurrió un error al enviar el correo. "
+                    "Inténtalo de nuevo más tarde.",
+                    "danger"
+                )
+                return redirect(url_for("recuperar_usuario"))
+
+            flash(
+                "Te hemos enviado tu nombre de usuario al correo "
+                + correo + ".",
+                "success"
+            )
+            return redirect(url_for("login"))
+
+        except Exception as e:
+            print("ERROR RECUPERAR USUARIO:", e)
+            flash(
+                "Ocurrió un error al procesar la solicitud.",
+                "danger"
+            )
+            return redirect(url_for("recuperar_usuario"))
+
+        finally:
+            cursor.close()
+            conexion.close()
+
+    return render_template("auth/recuperar_usuario.html")
+
+
+# ==========================================
+# RESTABLECER CONTRASEÑA
+# ==========================================
+@app.route("/restablecer-contrasena", methods=["GET", "POST"])
+def restablecer_contrasena():
+
+    if request.method == "POST":
+        correo = request.form.get("correo", "").strip().lower()
+
+        if not correo or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", correo):
+            flash(
+                "Ingresa un correo electrónico válido.",
+                "danger"
+            )
+            return redirect(url_for("restablecer_contrasena"))
+
+        conexion = obtener_conexion()
+
+        if conexion is None:
+            flash(
+                "No fue posible conectar con la base de datos.",
+                "danger"
+            )
+            return redirect(url_for("restablecer_contrasena"))
+
+        cursor = conexion.cursor(dictionary=True)
+
+        try:
+            cursor.execute(
+                """
+                SELECT id_usuario, nombre_completo
+                FROM usuarios
+                WHERE LOWER(correo) = %s
+                LIMIT 1
+                """,
+                (correo,)
+            )
+
+            registro = cursor.fetchone()
+
+            if registro is None:
+                flash(
+                    "No hay ningún usuario registrado con ese correo.",
+                    "danger"
+                )
+                return redirect(url_for("restablecer_contrasena"))
+
+            nombre_completo = registro["nombre_completo"]
+            id_usuario = registro["id_usuario"]
+
+            # No se puede recuperar la contraseña original porque solo se
+            # guarda su hash. Se genera una contraseña temporal nueva.
+            nueva_contrasena = generar_contrasena_temporal()
+            nuevo_hash = generate_password_hash(nueva_contrasena)
+
+            cursor.execute(
+                """
+                UPDATE usuarios
+                SET contrasena = %s
+                WHERE id_usuario = %s
+                """,
+                (nuevo_hash, id_usuario)
+            )
+
+            conexion.commit()
+
+            asunto = "Tu nueva contraseña de Atlas"
+            texto = (
+                "Hola " + nombre_completo + ",\n\n"
+                "Somos Atlas. Has solicitado restablecer tu contraseña.\n"
+                "Debido a que tus datos están protegidos, tu contraseña "
+                "anterior no puede recuperarse, por eso generamos una nueva:\n\n"
+                "   Contraseña: " + nueva_contrasena + "\n\n"
+                "Te recomendamos iniciar sesión y cambiarla por una "
+                "contraseña personal desde tu panel de usuario.\n\n"
+                "Atlas - Recicla. Suma. Transforma."
+            )
+
+            if not enviar_correo(correo, asunto, texto):
+                flash(
+                    "Ocurrió un error al enviar el correo. "
+                    "Inténtalo de nuevo más tarde.",
+                    "danger"
+                )
+                return redirect(url_for("restablecer_contrasena"))
+
+            flash(
+                "Te hemos enviado tu contraseña al correo "
+                + correo + ".",
+                "success"
+            )
+            return redirect(url_for("login"))
+
+        except Exception as e:
+            print("ERROR RESTABLECER CONTRASEÑA:", e)
+            flash(
+                "Ocurrió un error al procesar la solicitud.",
+                "danger"
+            )
+            return redirect(url_for("restablecer_contrasena"))
+
+        finally:
+            cursor.close()
+            conexion.close()
+
+    return render_template("auth/restablecer_contrasena.html")
+
+
+# ==========================================
+# CAMBIAR CONTRASEÑA (DESDE EL PANEL)
+# ==========================================
+@app.route("/cambiar-contrasena", methods=["POST"])
+def cambiar_contrasena():
+
+    if "id_usuario" not in session:
+        return redirect(url_for("login"))
+
+    contrasena_actual = request.form.get("contrasena_actual", "")
+    nueva_contrasena = request.form.get("nueva_contrasena", "")
+    confirmar_contrasena = request.form.get("confirmar_nueva_contrasena", "")
+
+    if not contrasena_actual or not nueva_contrasena or not confirmar_contrasena:
+        flash(
+            "Completa todos los campos para cambiar tu contraseña.",
+            "danger"
+        )
+        return redirect(url_for("dashboard"))
+
+    if not validar_contrasena(nueva_contrasena):
+        flash(
+            "La nueva contraseña debe tener al menos 8 caracteres, una "
+            "mayúscula, una minúscula y un número.",
+            "danger"
+        )
+        return redirect(url_for("dashboard"))
+
+    if nueva_contrasena != confirmar_contrasena:
+        flash(
+            "Las contraseñas nuevas no coinciden.",
+            "danger"
+        )
+        return redirect(url_for("dashboard"))
+
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        flash(
+            "No fue posible conectar con la base de datos.",
+            "danger"
+        )
+        return redirect(url_for("dashboard"))
+
+    cursor = conexion.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT contrasena
+            FROM usuarios
+            WHERE id_usuario = %s
+            LIMIT 1
+            """,
+            (session["id_usuario"],)
+        )
+
+        registro = cursor.fetchone()
+
+        if registro is None:
+            flash(
+                "El usuario no existe.",
+                "danger"
+            )
+            return redirect(url_for("logout"))
+
+        if not check_password_hash(
+            registro["contrasena"],
+            contrasena_actual
+        ):
+            flash(
+                "La contraseña actual es incorrecta.",
+                "danger"
+            )
+            return redirect(url_for("dashboard"))
+
+        nuevo_hash = generate_password_hash(nueva_contrasena)
+
+        cursor.execute(
+            """
+            UPDATE usuarios
+            SET contrasena = %s
+            WHERE id_usuario = %s
+            """,
+            (nuevo_hash, session["id_usuario"])
+        )
+
+        conexion.commit()
+
+        flash(
+            "Contraseña actualizada correctamente.",
+            "success"
+        )
+        return redirect(url_for("dashboard"))
+
+    except Exception as e:
+        conexion.rollback()
+        print("ERROR CAMBIAR CONTRASEÑA:", e)
+        flash(
+            "No fue posible actualizar la contraseña.",
+            "danger"
+        )
+        return redirect(url_for("dashboard"))
+
+    finally:
+        cursor.close()
+        conexion.close()
+
 
 # ==========================================
 # DASHBOARD USUARIO
