@@ -46,7 +46,18 @@
         </div>
     </aside>
 
-    <main class="dashboard-main">
+        <main class="dashboard-main">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         <header class="dashboard-header">
             <div>
                 <span class="page-label">PANEL DE USUARIO</span>
@@ -170,6 +181,78 @@
                 Escanear botella
             </a>
 
+        </section>
+
+        <section class="security-card">
+            <div class="security-header">
+                <div>
+                    <span class="card-label">SEGURIDAD</span>
+                    <h3>Cambiar contraseña</h3>
+                </div>
+            </div>
+
+            <p class="security-description">
+                Para actualizar tu contraseña ingresa primero tu contraseña
+                actual y luego la nueva dos veces.
+            </p>
+
+            <form
+                class="security-form"
+                action="{{ url_for('cambiar_contrasena') }}"
+                method="POST"
+                autocomplete="off"
+                id="change-password-form"
+            >
+
+                <div class="security-field">
+                    <label for="contrasena_actual">Contraseña actual</label>
+                    <input
+                        type="password"
+                        id="contrasena_actual"
+                        name="contrasena_actual"
+                        placeholder="Ingresa tu contraseña actual"
+                        maxlength="255"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <div class="security-field">
+                    <label for="nueva_contrasena">Nueva contraseña</label>
+                    <input
+                        type="password"
+                        id="nueva_contrasena"
+                        name="nueva_contrasena"
+                        placeholder="Mínimo 8 caracteres"
+                        minlength="8"
+                        maxlength="255"
+                        autocomplete="new-password"
+                        required
+                    >
+                    <small class="form-hint">
+                        Mínimo 8 caracteres, con mayúscula, minúscula y número.
+                    </small>
+                </div>
+
+                <div class="security-field">
+                    <label for="confirmar_nueva_contrasena">Confirmar nueva contraseña</label>
+                    <input
+                        type="password"
+                        id="confirmar_nueva_contrasena"
+                        name="confirmar_nueva_contrasena"
+                        placeholder="Repite la nueva contraseña"
+                        minlength="8"
+                        maxlength="255"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="security-button">
+                    Actualizar contraseña
+                </button>
+
+            </form>
         </section>
     </main>
 </div>

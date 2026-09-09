@@ -1112,3 +1112,147 @@
         display: none;
     }
 }
+
+/* ==========================================
+   SECURITY CARD (CAMBIO DE CONTRASEÑA)
+ ========================================== */
+
+.security-card {
+
+    margin-top: 20px;
+
+    padding: 25px;
+
+    border-radius: 14px;
+
+    background: #0e2038;
+
+    border: 1px solid rgba(255,255,255,0.05);
+
+}
+
+.security-header h3 {
+
+    margin-top: 7px;
+
+    font-size: 18px;
+
+}
+
+.security-description {
+
+    margin-top: 10px;
+
+    color: #687f9f;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+
+}
+
+.security-form {
+
+    margin-top: 20px;
+
+    max-width: 520px;
+
+}
+
+.security-field {
+
+    margin-bottom: 18px;
+
+}
+
+.security-field label {
+
+    display: block;
+
+    font-size: 13px;
+
+    color: #9fb6d6;
+
+    margin-bottom: 8px;
+
+}
+
+.security-field input {
+
+    width: 100%;
+
+    height: 48px;
+
+    padding: 0 15px;
+
+    border-radius: 9px;
+
+    border: 1px solid rgba(255,255,255,0.08);
+
+    background: #0a1a30;
+
+    color: #eef5ff;
+
+    outline: none;
+
+    transition: 0.2s ease;
+
+}
+
+.security-field input::placeholder {
+
+    color: #5a6c8e;
+
+}
+
+.security-field input:focus {
+
+    border-color: #00e5ff;
+
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+
+}
+
+.security-button {
+
+    height: 50px;
+
+    padding: 0 28px;
+
+    margin-top: 6px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #00e5ff;
+
+    color: #04101f;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+
+}
+
+.security-button:hover {
+
+    background: #4df0ff;
+
+    box-shadow: 0 0 25px rgba(0,229,255,0.22);
+
+    transform: translateY(-1px);
+
+}
+
+.dashboard-main .alert {
+
+    margin-top: 0;
+
+    margin-bottom: 20px;
+
+}
