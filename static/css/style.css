@@ -292,6 +292,19 @@ select {
     margin-top: 7px;
 }
 
+.field-error {
+
+    display: block;
+
+    color: #ff8585;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+
+    margin-top: 7px;
+}
+
 
 /* =========================================
    FORM
@@ -417,7 +430,65 @@ select {
 
 /* =========================================
    FOOTER FORM
-========================================= */
+ ========================================= */
+
+/* =========================================
+   ENLACES DE RECUPERACIÓN
+ ========================================= */
+
+.forgot-links {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 22px;
+
+    padding: 16px;
+
+    border-radius: 10px;
+
+    background: rgba(0, 229, 255, 0.04);
+
+    border: 1px solid rgba(0, 229, 255, 0.10);
+
+}
+
+.forgot-links span {
+
+    color: var(--gray);
+
+    font-size: 12px;
+
+    margin-bottom: 2px;
+
+}
+
+.forgot-links a {
+
+    color: var(--cyan);
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    transition: 0.15s ease;
+
+}
+
+.forgot-links a:hover {
+
+    text-decoration: underline;
+
+    color: #4df0ff;
+
+}
 
 .form-footer {
 

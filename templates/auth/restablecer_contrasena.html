@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Restablecer contraseña | Atlas{% endblock %}
+
+{% block content %}
+
+<div class="auth-page">
+
+    <div class="auth-container">
+
+        <!-- PANEL IZQUIERDO -->
+        <section class="auth-brand">
+
+            <div class="logo-container">
+                <div class="logo-placeholder">
+                    <img
+                        src="{{ url_for('static', filename='img/logo.png') }}"
+                        alt="Logo de Atlas"
+                    >
+                </div>
+            </div>
+
+            <h1>Atlas</h1>
+
+            <p>
+                Sistema de Gestión Inteligente
+                de Recolección de Reciclaje
+            </p>
+
+            <div class="brand-line"></div>
+
+            <span class="brand-description">
+                Recicla. Suma. Transforma.
+            </span>
+
+        </section>
+
+
+        <!-- PANEL DERECHO -->
+        <section class="auth-form-section">
+
+            <div class="auth-form-container">
+
+                <h2>Restablecer contraseña</h2>
+
+                <p class="form-description">
+                    Ingresa tu correo electrónico y te enviaremos
+                    tu contraseña.
+                </p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form
+                    action="{{ url_for('restablecer_contrasena') }}"
+                    method="POST"
+                    autocomplete="off"
+                >
+
+                    <div class="form-group">
+                        <label for="correo">
+                            Correo electrónico
+                        </label>
+                        <input
+                            type="email"
+                            id="correo"
+                            name="correo"
+                            placeholder="Ingresa el correo registrado"
+                            maxlength="150"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                    >
+                        Enviar mi contraseña
+                    </button>
+
+                </form>
+
+                <div class="form-footer">
+
+                    <a href="{{ url_for('login') }}">
+                        Volver a iniciar sesión
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+{% endblock %}

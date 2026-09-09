@@ -85,6 +85,7 @@
                             name="nombre_completo"
                             placeholder="Ej: Maria Gomez"
                             maxlength="150"
+                            value="{{ datos.nombre_completo if datos else '' }}"
                             required
                         >
 
@@ -108,6 +109,7 @@
                             inputmode="numeric"
                             pattern="[0-9]*"
                             maxlength="30"
+                            value="{{ datos.numero_identificacion if datos else '' }}"
                             oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             required
                         >
@@ -128,6 +130,7 @@
                             name="correo"
                             placeholder="Ej: correo@gmail.com"
                             maxlength="150"
+                            value="{{ datos.correo if datos else '' }}"
                             required
                         >
 
@@ -147,6 +150,7 @@
                             name="telefono"
                             placeholder="Ej: 3001234567"
                             maxlength="20"
+                            value="{{ datos.telefono if datos else '' }}"
                         >
 
                     </div>
@@ -168,6 +172,7 @@
                             maxlength="50"
                             pattern="[A-Za-z0-9_.-]{3,50}"
                             autocomplete="username"
+                            value="{{ datos.usuario if datos else '' }}"
                             required
                         >
 
@@ -256,5 +261,179 @@
     </div>
 
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+(function () {
+
+    var form = document.querySelector(".auth-form-container form");
+
+    if (!form) return;
+
+    function marcarError(campo, mensaje) {
+        var grupo = campo.closest(".form-group");
+        var existente = grupo.querySelector(".field-error");
+
+        if (existente) {
+            existente.textContent = mensaje;
+        } else {
+            var error = document.createElement("small");
+            error.className = "field-error";
+            error.textContent = mensaje;
+            grupo.appendChild(error);
+        }
+    }
+
+    function limpiarError(campo) {
+        var grupo = campo.closest(".form-group");
+        var existente = grupo.querySelector(".field-error");
+        if (existente) existente.remove();
+        campo.setCustomValidity("");
+    }
+
+    function tieneTexto(valor) {
+        return valor.trim().length > 0;
+    }
+
+    function verificarDuplicado(campo, valor) {
+        return fetch("{{ url_for('api_verificar_datos') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ campo: campo, valor: valor }),
+            credentials: "same-origin"
+        }).then(function (respuesta) {
+            return respuesta.json();
+        }).then(function (data) {
+            return !!(data && data.existe);
+        }).catch(function () {
+            return false;
+        });
+    }
+
+    var nombre = document.getElementById("nombre_completo");
+    var identificacion = document.getElementById("numero_identificacion");
+    var correo = document.getElementById("correo");
+    var usuario = document.getElementById("usuario");
+    var contrasena = document.getElementById("contrasena");
+    var confirmar = document.getElementById("confirmar_contrasena");
+
+    var enProceso = false;
+
+    form.addEventListener("submit", function (evento) {
+
+        limpiarErrores();
+        var errores = [];
+
+        if (!tieneTexto(nombre.value)) {
+            errores.push({ campo: nombre, mensaje: "El nombre completo es obligatorio." });
+        }
+
+        if (!tieneTexto(identificacion.value)) {
+            errores.push({ campo: identificacion, mensaje: "La identificación es obligatoria." });
+        } else if (!/^[0-9]+$/.test(identificacion.value)) {
+            errores.push({ campo: identificacion, mensaje: "La identificación solo puede contener números." });
+        }
+
+        var regexCorreo = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+        if (!regexCorreo.test(correo.value)) {
+            errores.push({ campo: correo, mensaje: "Ingresa un correo electrónico válido." });
+        }
+
+        var regexUsuario = /^[A-Za-z0-9_.-]{3,50}$/;
+        if (!regexUsuario.test(usuario.value)) {
+            errores.push({ campo: usuario, mensaje: "El usuario debe tener entre 3 y 50 caracteres (letras, números, puntos o guiones)." });
+        }
+
+        var regexPass = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,}$/;
+        if (!regexPass.test(contrasena.value)) {
+            errores.push({ campo: contrasena, mensaje: "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número." });
+        }
+
+        if (contrasena.value !== confirmar.value) {
+            errores.push({ campo: confirmar, mensaje: "Las contraseñas no coinciden." });
+        }
+
+        errores.forEach(function (e) {
+            marcarError(e.campo, e.mensaje);
+        });
+
+        if (errores.length > 0) {
+            evento.preventDefault();
+            return;
+        }
+
+        // Verificar duplicados en la base de datos antes de enviar.
+        evento.preventDefault();
+        if (enProceso) return;
+        enProceso = true;
+
+        var boton = form.querySelector(".btn-primary");
+        boton.disabled = true;
+        boton.textContent = "Verificando...";
+
+        Promise.all([
+            verificarDuplicado("usuario", usuario.value),
+            verificarDuplicado("correo", correo.value),
+            verificarDuplicado("numero_identificacion", identificacion.value)
+        ]).then(function (resultados) {
+
+            if (resultados[0]) {
+                marcarError(usuario, "Este nombre de usuario ya está registrado.");
+                boton.disabled = false;
+                boton.textContent = "Crear cuenta";
+                enProceso = false;
+                return;
+            }
+
+            if (resultados[1]) {
+                marcarError(correo, "Este correo ya está registrado.");
+                boton.disabled = false;
+                boton.textContent = "Crear cuenta";
+                enProceso = false;
+                return;
+            }
+
+            if (resultados[2]) {
+                marcarError(identificacion, "Esta identificación ya está registrada.");
+                boton.disabled = false;
+                boton.textContent = "Crear cuenta";
+                enProceso = false;
+                return;
+            }
+
+            boton.disabled = false;
+            boton.textContent = "Crear cuenta";
+            enProceso = false;
+            form.submit();
+        }).catch(function () {
+            boton.disabled = false;
+            boton.textContent = "Crear cuenta";
+            enProceso = false;
+            form.submit();
+        });
+
+    });
+
+    function limpiarErrores() {
+        var grupos = form.querySelectorAll(".form-group");
+        grupos.forEach(function (g) {
+            var e = g.querySelector(".field-error");
+            if (e) e.remove();
+        });
+    }
+
+    // Validación en vivo al salir de cada campo.
+    [nombre, identificacion, correo, usuario, contrasena, confirmar].forEach(function (campo) {
+        if (!campo) return;
+        campo.addEventListener("blur", function () {
+            limpiarError(campo);
+        });
+    });
+
+})();
+</script>
 
 {% endblock %}
