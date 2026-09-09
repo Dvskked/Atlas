@@ -490,6 +490,7 @@
 .author-avatar {
     width: 82px;
     height: 82px;
+    min-width: 82px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -500,6 +501,13 @@
     color: #00e5ff;
     font-size: 24px;
     font-weight: 700;
+    overflow: hidden;
+}
+
+.author-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .author-card h4 {
@@ -541,29 +549,67 @@
 
 .project-chip {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 14px 16px;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
     border-radius: 12px;
     background: #112448;
     border: 1px solid #1e3f66;
-    text-decoration: none;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .project-chip:hover {
     transform: translateY(-2px);
     border-color: #2a5db0;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
 
-.project-chip strong {
+.tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tech-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    background: #112448;
+    border: 1px solid #1e3f66;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tech-chip:hover {
+    transform: translateY(-2px);
+    border-color: #2a5db0;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+.tech-chip img {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    object-fit: contain;
+}
+
+.tech-chip div {
+    min-width: 0;
+}
+
+.tech-chip strong {
+    display: block;
+    margin-bottom: 3px;
     color: #eef5ff;
-    font-size: 15px;
+    font-size: 13px;
 }
 
-.project-chip span {
+.tech-chip span {
+    display: block;
     color: #748078;
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.45;
 }
 
 .purpose-section,
@@ -878,6 +924,10 @@
 
 @media (max-width: 600px) {
     .purpose-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tech-grid {
         grid-template-columns: 1fr;
     }
 
