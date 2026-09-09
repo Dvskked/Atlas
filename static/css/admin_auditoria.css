@@ -15,9 +15,15 @@
    ========================================================= */
 
 .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
     width: 270px;
     min-width: 270px;
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     background: #0a1628;
@@ -190,6 +196,7 @@
 .admin-main {
     flex: 1;
     min-width: 0;
+    margin-left: 270px;
     padding: 35px 40px;
     overflow-x: hidden;
 }
@@ -1095,6 +1102,7 @@
     }
 
     .admin-main {
+        margin-left: 220px;
         padding: 25px;
     }
 
@@ -1114,9 +1122,15 @@
     }
 
     .admin-sidebar {
+        position: relative;
+        top: auto;
+        left: auto;
+        bottom: auto;
         width: 100%;
         min-width: 100%;
+        height: auto;
         min-height: auto;
+        overflow-y: visible;
     }
 
     .admin-nav {
@@ -1128,6 +1142,7 @@
     }
 
     .admin-main {
+        margin-left: 0;
         padding: 20px;
     }
 

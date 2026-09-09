@@ -6,9 +6,15 @@
 }
 
 .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
     width: 270px;
     min-width: 270px;
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     background: #0a1628;
@@ -171,6 +177,7 @@
 .admin-main {
     flex: 1;
     min-width: 0;
+    margin-left: 270px;
     padding: 35px 40px;
     overflow-x: hidden;
 }
@@ -492,6 +499,7 @@
     }
 
     .admin-main {
+        margin-left: 220px;
         padding: 25px;
     }
 
@@ -536,6 +544,7 @@
 
     .admin-main {
         padding: 60px 18px 20px;
+        margin-left: 0;
     }
 
     .admin-project-card {

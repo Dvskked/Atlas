@@ -108,7 +108,7 @@
                                 {% else %}
                                     <div class="product-no-image">▣</div>
                                 {% endif %}
-                                <span class="product-stock">
+                                <span class="product-stock {% if producto.stock == 0 %}out{% endif %}">
                                     {% if producto.stock > 0 %}
                                         Disponible
                                     {% else %}
