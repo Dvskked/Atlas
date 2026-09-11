@@ -222,6 +222,240 @@ def enviar_correo(destinatario, asunto, texto_plano):
         return False
 
 
+def enviar_correo_html(destinatario, asunto, html_contenido, texto_plano=""):
+    """Envía un correo HTML usando SMTP.
+
+    Misma configuración de variables de entorno que enviar_correo().
+    Si texto_plano se omite, se genera una versión básica del HTML.
+    """
+    host = os.getenv("ATLAS_SMTP_HOST", "").strip() or "smtp.gmail.com"
+    port = int(os.getenv("ATLAS_SMTP_PORT", "").strip() or "587")
+    usuario = os.getenv("ATLAS_SMTP_USER", "").strip() or "siriusplanet76@gmail.com"
+    contrasena = os.getenv("ATLAS_SMTP_PASS", "").strip() or "bsbk gjwa gthf pean"
+    remitente = os.getenv("ATLAS_SMTP_FROM", "").strip() or usuario
+    usar_tls = os.getenv("ATLAS_SMTP_TLS", "1").strip() == "1"
+
+    if not host or not usuario or not contrasena:
+        print("ERROR CORREO HTML: Faltan variables ATLAS_SMTP_* de configuración.")
+        return False
+
+    if not destinatario or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", destinatario):
+        print("ERROR CORREO HTML: Dirección de destino no válida:", destinatario)
+        return False
+
+    mensaje = MIMEMultipart("alternative")
+    mensaje["From"] = remitente
+    mensaje["To"] = destinatario
+    mensaje["Subject"] = asunto
+
+    if texto_plano:
+        mensaje.attach(MIMEText(texto_plano, "plain", "utf-8"))
+
+    mensaje.attach(MIMEText(html_contenido, "html", "utf-8"))
+
+    try:
+        servidor = smtplib.SMTP(host, port, timeout=30)
+        servidor.ehlo()
+
+        if usar_tls:
+            servidor.starttls()
+            servidor.ehlo()
+
+        servidor.login(usuario, contrasena)
+        servidor.sendmail(remitente, [destinatario], mensaje.as_string())
+        servidor.quit()
+
+        print("CORREO HTML ENVIADO A:", destinatario)
+        return True
+
+    except Exception as e:
+        print("ERROR ENVIANDO CORREO HTML:", e)
+        return False
+
+
+def _plantilla_bienvenida(nombre, usuario, correo, fecha_registro, telefono=""):
+    """Genera el contenido HTML del correo de bienvenida de Atlas."""
+
+    telefono_bloque = ""
+    if telefono:
+        telefono_bloque = f"""
+                        <tr>
+                            <td style="padding:8px 0;color:#555;font-size:14px;">Telefono:</td>
+                            <td style="padding:8px 0;color:#1a1a2e;font-weight:600;font-size:14px;">{telefono}</td>
+                        </tr>
+        """
+
+    html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+        <tr>
+            <td align="center">
+
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0f3460,#16213e);padding:40px 30px;text-align:center;">
+                            <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:1px;">
+                                &#127758; ATLAS
+                            </h1>
+                            <p style="margin:8px 0 0;color:#a8d8ea;font-size:13px;letter-spacing:0.5px;">
+                                SISTEMA DE GESTION DE RECICLAJE INTELIGENTE
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SALUDO -->
+                    <tr>
+                        <td style="padding:35px 35px 10px;text-align:center;">
+                            <h2 style="margin:0;color:#1a1a2e;font-size:22px;font-weight:700;">
+                                !Bienvenido a Atlas, {nombre}!
+                            </h2>
+                            <p style="margin:12px 0 0;color:#555;font-size:14px;line-height:1.6;">
+                                Tu cuenta ha sido creada exitosamente. Ahora formas parte de una comunidad
+                                comprometida con el reciclaje inteligente y la automatizacion para la UATF.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- SEPARADOR -->
+                    <tr>
+                        <td style="padding:0 35px;">
+                            <hr style="border:none;border-top:1px solid #e8ecf1;margin:10px 0;">
+                        </td>
+                    </tr>
+
+                    <!-- QUE ES ATLAS -->
+                    <tr>
+                        <td style="padding:15px 35px;">
+                            <h3 style="margin:0 0 8px;color:#0f3460;font-size:16px;">
+                                &#9881; Que es Atlas?
+                            </h3>
+                            <p style="margin:0;color:#555;font-size:13px;line-height:1.7;">
+                                Atlas es un <strong style="color:#1a1a2e;">sistema de gestion inteligente</strong>
+                                disenado para la automatizacion y trazabilidad del reciclaje en la
+                                Universidad Autonoma de Tomina. Utiliza inteligencia artificial (YOLOv8)
+                                para detectar botellas PET, tapas y etiquetas en tiempo real, recompensandote
+                                con <strong style="color:#0f3460;">AtlasPuntos</strong> por cada reciclaje.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- TUS DATOS -->
+                    <tr>
+                        <td style="padding:15px 35px;">
+                            <h3 style="margin:0 0 12px;color:#0f3460;font-size:16px;">
+                                &#128196; Tus datos de registro
+                            </h3>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fb;border-radius:8px;border:1px solid #e8ecf1;">
+                                <tr>
+                                    <td style="padding:8px 15px;color:#555;font-size:14px;">Nombre:</td>
+                                    <td style="padding:8px 15px;color:#1a1a2e;font-weight:600;font-size:14px;">{nombre}</td>
+                                </tr>
+                                <tr style="background-color:#f0f2f5;">
+                                    <td style="padding:8px 15px;color:#555;font-size:14px;">Usuario:</td>
+                                    <td style="padding:8px 15px;color:#1a1a2e;font-weight:600;font-size:14px;">{usuario}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 15px;color:#555;font-size:14px;">Correo:</td>
+                                    <td style="padding:8px 15px;color:#1a1a2e;font-weight:600;font-size:14px;">{correo}</td>
+                                </tr>
+                                <tr style="background-color:#f0f2f5;">
+                                    <td style="padding:8px 15px;color:#555;font-size:14px;">Fecha de registro:</td>
+                                    <td style="padding:8px 15px;color:#1a1a2e;font-weight:600;font-size:14px;">{fecha_registro}</td>
+                                </tr>
+                                {telefono_bloque}
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- PASOS SIGUIENTES -->
+                    <tr>
+                        <td style="padding:15px 35px;">
+                            <h3 style="margin:0 0 10px;color:#0f3460;font-size:16px;">
+                                &#128640; Siguientes pasos
+                            </h3>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="padding:5px 0;color:#555;font-size:13px;line-height:1.6;">
+                                        <strong style="color:#0f3460;">1.</strong> Inicia sesion con tu usuario y contrasena.<br>
+                                        <strong style="color:#0f3460;">2.</strong> Acumula AtlasPuntos escaneando botellas PET con la camara.<br>
+                                        <strong style="color:#0f3460;">3.</strong> Canjea tus puntos por productos ecologicos en el catalogo.<br>
+                                        <strong style="color:#0f3460;">4.</strong> Contribuye al medio ambiente y a la automatizacion inteligente.
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- CONTACTO -->
+                    <tr>
+                        <td style="padding:15px 35px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f7ff;border-radius:8px;border:1px solid #d0e3f7;">
+                                <tr>
+                                    <td style="padding:15px 20px;">
+                                        <p style="margin:0 0 6px;color:#0f3460;font-size:13px;font-weight:700;">
+                                            &#128231; ¿Necesitas ayuda?
+                                        </p>
+                                        <p style="margin:0;color:#555;font-size:13px;line-height:1.6;">
+                                            Si tienes dudas o necesitas asistencia, contacta al desarrollador del proyecto:<br>
+                                            <strong style="color:#1a1a2e;">Correo:</strong>
+                                            <a href="mailto:siriusplanet76@gmail.com" style="color:#0f3460;text-decoration:none;">siriusplanet76@gmail.com</a><br>
+                                            <strong style="color:#1a1a2e;">Telefono:</strong>
+                                            <span style="color:#0f3460;">+57 3153806797</span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                        <td style="background-color:#f4f6f8;padding:25px 35px;text-align:center;border-top:1px solid #e8ecf1;">
+                            <p style="margin:0 0 5px;color:#888;font-size:11px;">
+                                Atlas - Sistema de Gestion de Reciclaje Inteligente
+                            </p>
+                            <p style="margin:0;color:#aaa;font-size:10px;">
+                                Universidad Autonoma de Tomina &copy; 2025. Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>"""
+
+    texto_plano = (
+        f"!Bienvenido a Atlas, {nombre}!\n\n"
+        f"Tu cuenta ha sido creada exitosamente.\n\n"
+        f"Tus datos:\n"
+        f"  Nombre: {nombre}\n"
+        f"  Usuario: {usuario}\n"
+        f"  Correo: {correo}\n"
+        f"  Fecha de registro: {fecha_registro}\n"
+        + (f"  Telefono: {telefono}\n" if telefono else "")
+        + "\nSi necesitas ayuda, contacta al desarrollador:\n"
+        "  Correo: siriusplanet76@gmail.com\n"
+        "  Telefono: +57 3153806797\n\n"
+        "Atlas - Sistema de Gestion de Reciclaje Inteligente\n"
+        "Universidad Autonoma de Tomina"
+    )
+
+    return html, texto_plano
+
+
 # ==========================================
 # INICIO
 # ==========================================
@@ -433,6 +667,25 @@ def register():
             )
 
             conexion.commit()
+
+            # --- Correo de bienvenida (HTML) ---
+            try:
+                fecha_registro = datetime.now().strftime("%d/%m/%Y %H:%M")
+                html_bienvenida, texto_bienvenida = _plantilla_bienvenida(
+                    nombre=nombre_completo,
+                    usuario=usuario,
+                    correo=correo,
+                    fecha_registro=fecha_registro,
+                    telefono=telefono
+                )
+                enviar_correo_html(
+                    destinatario=correo,
+                    asunto="!Bienvenido a Atlas! - Tu cuenta ha sido creada",
+                    html_contenido=html_bienvenida,
+                    texto_plano=texto_bienvenida
+                )
+            except Exception as e_email:
+                print("ERROR ENVIANDO CORREO DE BIENVENIDA:", e_email)
 
             flash(
                 "Cuenta creada correctamente. Ya puedes iniciar sesión.",
