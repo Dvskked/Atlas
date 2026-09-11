@@ -20,6 +20,66 @@
         href="{{ url_for('static', filename='css/style.css') }}"
     >
 
+    <style>
+    .cookie-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #fff;
+        padding: 18px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+        font-family: 'Segoe UI', Arial, sans-serif;
+        animation: slideUp 0.4s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .cookie-banner p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        flex: 1;
+    }
+    .cookie-banner a {
+        color: #a8d8ea;
+        text-decoration: underline;
+    }
+    .cookie-btn-group {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    .cookie-btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .cookie-btn-accept {
+        background-color: #0f3460;
+        color: #fff;
+    }
+    .cookie-btn-accept:hover { background-color: #1a4a8a; }
+    .cookie-btn-reject {
+        background-color: transparent;
+        color: #ccc;
+        border: 1px solid #555;
+    }
+    .cookie-btn-reject:hover { background-color: #333; color: #fff; }
+    .cookie-banner.hidden { display: none; }
+    </style>
+
     {% block extra_css %}
     {% endblock %}
 
@@ -34,9 +94,187 @@
 
     </main>
 
+    <!-- COOKIE CONSENT BANNER -->
+    <div id="cookie-banner" class="cookie-banner hidden">
+        <p>
+            Utilizamos cookies y localStorage para mejorar tu experiencia,
+            recordar tus preferencias y mantener tu sesion activa.
+            Al continuar navegando, aceptas el uso de estas tecnologias.
+            <a href="https://www.cookiespolicy.com/" target="_blank">Politica de cookies</a>
+        </p>
+        <div class="cookie-btn-group">
+            <button id="cookie-reject" class="cookie-btn cookie-btn-reject">
+                Rechazar
+            </button>
+            <button id="cookie-accept" class="cookie-btn cookie-btn-accept">
+                Aceptar
+            </button>
+        </div>
+    </div>
+
 
     {% block extra_js %}
     {% endblock %}
+
+
+<script>
+(function () {
+
+    // ============================================================
+    // UTILIDADES: Cookies
+    // ============================================================
+    var AtlasCookies = {
+        set: function (nombre, valor, dias) {
+            var expira = "";
+            if (dias) {
+                var fecha = new Date();
+                fecha.setTime(fecha.getTime() + (dias * 24 * 60 * 60 * 1000));
+                expira = "; expires=" + fecha.toUTCString();
+            }
+            document.cookie = nombre + "=" + encodeURIComponent(valor) + expira + "; path=/; SameSite=Lax";
+        },
+        get: function (nombre) {
+            var nombreEQ = nombre + "=";
+            var cookies = document.cookie.split(";");
+            for (var i = 0; i < cookies.length; i++) {
+                var c = cookies[i].trim();
+                if (c.indexOf(nombreEQ) === 0) {
+                    return decodeURIComponent(c.substring(nombreEQ.length));
+                }
+            }
+            return null;
+        },
+        remove: function (nombre) {
+            document.cookie = nombre + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax";
+        }
+    };
+
+    // ============================================================
+    // UTILIDADES: localStorage con expiracion
+    // ============================================================
+    var AtlasStorage = {
+        set: function (clave, valor, minutos) {
+            var item = {
+                valor: valor,
+                expira: minutos ? Date.now() + (minutos * 60 * 1000) : null
+            };
+            try {
+                localStorage.setItem("atlas_" + clave, JSON.stringify(item));
+            } catch (e) {
+                console.warn("AtlasStorage: No se pudo guardar", clave, e);
+            }
+        },
+        get: function (clave) {
+            try {
+                var raw = localStorage.getItem("atlas_" + clave);
+                if (!raw) return null;
+                var item = JSON.parse(raw);
+                if (item.expira && Date.now() > item.expira) {
+                    localStorage.removeItem("atlas_" + clave);
+                    return null;
+                }
+                return item.valor;
+            } catch (e) {
+                return null;
+            }
+        },
+        remove: function (clave) {
+            localStorage.removeItem("atlas_" + clave);
+        }
+    };
+
+    // Exponer globalmente
+    window.AtlasCookies = AtlasCookies;
+    window.AtlasStorage = AtlasStorage;
+
+    // ============================================================
+    // BANNER DE COOKIES
+    // ============================================================
+    var consentimiento = AtlasCookies.get("atlas_cookie_consent");
+
+    if (!consentimiento) {
+        var banner = document.getElementById("cookie-banner");
+        if (banner) {
+            banner.classList.remove("hidden");
+        }
+    }
+
+    var btnAceptar = document.getElementById("cookie-accept");
+    var btnRechazar = document.getElementById("cookie-reject");
+
+    if (btnAceptar) {
+        btnAceptar.addEventListener("click", function () {
+            AtlasCookies.set("atlas_cookie_consent", "aceptado", 365);
+            var banner = document.getElementById("cookie-banner");
+            if (banner) banner.classList.add("hidden");
+        });
+    }
+
+    if (btnRechazar) {
+        btnRechazar.addEventListener("click", function () {
+            AtlasCookies.set("atlas_cookie_consent", "rechazado", 30);
+            var banner = document.getElementById("cookie-banner");
+            if (banner) banner.classList.add("hidden");
+        });
+    }
+
+    // ============================================================
+    // RECORDAR USUARIO EN LOGIN (localStorage)
+    // ============================================================
+    var formLogin = document.querySelector('form[action*="login"]');
+
+    if (formLogin) {
+        var campoUsuario = formLogin.querySelector('#usuario, [name="usuario"]');
+
+        // Si hay un usuario recordado, precargar el campo
+        if (campoUsuario) {
+            var recordado = AtlasStorage.get("usuario_recordado");
+            if (recordado) {
+                campoUsuario.value = recordado;
+                // Enfocar el campo de contrasena
+                var campoPass = formLogin.querySelector('#contrasena, [name="contrasena"]');
+                if (campoPass) campoPass.focus();
+            }
+
+            // Guardar usuario al enviar el formulario
+            formLogin.addEventListener("submit", function () {
+                var valor = campoUsuario.value.trim();
+                if (valor) {
+                    // Guardar por 30 dias
+                    AtlasStorage.set("usuario_recordado", valor, 30 * 24 * 60);
+                }
+            });
+        }
+    }
+
+    // ============================================================
+    // GUARDAR PREFERENCIAS DE TEMA EN localStorage
+    // ============================================================
+    var temaGuardado = AtlasStorage.get("tema");
+    if (temaGuardado) {
+        document.documentElement.setAttribute("data-tema", temaGuardado);
+    }
+
+    // ============================================================
+    // GUARDAR POSICION DE SCROLL POR PAGINA
+    // ============================================================
+    var pagina = window.location.pathname;
+    var scrollGuardado = AtlasStorage.get("scroll_" + pagina);
+    if (scrollGuardado) {
+        setTimeout(function () {
+            window.scrollTo(0, parseInt(scrollGuardado, 10));
+        }, 100);
+    }
+
+    window.addEventListener("beforeunload", function () {
+        var scrollY = window.scrollY || document.documentElement.scrollTop;
+        if (scrollY > 100) {
+            AtlasStorage.set("scroll_" + window.location.pathname, scrollY, 5);
+        }
+    });
+
+})();
+</script>
 
 
 </body>
