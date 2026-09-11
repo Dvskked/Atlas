@@ -2,17 +2,26 @@
 
 Sistema de gestión de reciclaje inteligente con inteligencia artificial. Detecta botellas PET, tapas y etiquetas mediante YOLOv8 y asigna puntos de reciclaje (AtlasPuntos) a los usuarios, quienes pueden canjearlos por productos ecológicos del catálogo.
 
-Proyecto de desarrollo de software orientado a comunidades educativas, empresas y público externo interesado en el reciclaje.
+El proyecto se compone de dos aplicaciones:
+
+- **Sistema principal (hardware)**: aplicación de escritorio (Electron + Flask) que controla la máquina de reciclaje, realiza el escaneo inteligente con YOLOv8 y expone el panel administrativo.
+- **App de usuario (`app-usuario/`)**: aplicación web independiente a la que el usuario accede escaneando el **código QR** de la máquina. Permite registrarse, iniciar sesión y consultar su información, puntos y clasificación en tiempo real, sin necesidad de la máquina.
+
+Desarrollado por **Andres Forero**, desarrollador semi junior de software enfocado en análisis de datos y desarrollo de escritorio.
 
 ## Funcionalidades
 
 ### Usuario
-- **Registro e inicio de sesión** con número de identificación y roles (Aprendiz, Instructor, Área Administrativa, Externo)
-- **Detección IA**: escanea botellas PET mediante la cámara usando un modelo YOLOv8 entrenado con dataset propio; identifica botella, tapa y etiqueta
+- **Acceso por QR**: el usuario escanea el código QR de la máquina de reciclaje y accede a la app web de usuario (`app-usuario/`).
+- **Registro e inicio de sesión** con número de identificación y roles (USUARIO / ADMINISTRADOR)
+- **Detección IA**: escanea botellas PET mediante la cámara usando un modelo YOLOv8 entrenado con dataset propio; identifica botella, tapa y etiqueta (solo en el sistema de hardware)
 - **Sistema de AtlasPuntos**: asigna puntos automáticamente según lo detectado (50 base + 10 tapa + 5 etiqueta)
 - **Comprobantes de reciclaje**: genera automáticamente un comprobante numerado (ATLA-XXXXXX) por cada reciclaje registrado
 - **Catálogo / Tienda**: canjea AtlasPuntos por productos ecológicos
-- **Dashboard**: saldo de puntos, botellas recicladas, puntos obtenidos y último reciclaje
+- **Dashboard** (app de usuario): saldo de puntos, botellas recicladas, puntos obtenidos, último reciclaje, movimientos recientes y posición en el ranking
+- **Clasificación** (app de usuario): tablas de mayores AtlasPuntos, más reciclajes y más canjes, con posición del usuario
+- **Términos y condiciones**: consentimiento de tratamiento de datos personales (Ley 1581 de 2012) al registrarse, registrado en la base de datos
+- **Correos automáticos**: bienvenida, recuperación de usuario y restablecimiento de contraseña
 - **Comprobantes de canje**: numeración CANJ-XXXXXX
 
 ### Administrador
@@ -54,7 +63,8 @@ Proyecto de desarrollo de software orientado a comunidades educativas, empresas 
 
 ```
 Atlas/
-├── app.py              # Aplicación principal Flask (rutas, API, lógica)
+├── app.py              # Aplicación principal Flask (rutas, API, lógica, IA)
+├── app-usuario/        # App web independiente del usuario (QR -> ver su README)
 ├── conexion.py         # Conexión a MySQL (Clever Cloud)
 ├── train.py            # Entrenamiento del modelo YOLO
 ├── camara.py           # Prueba de cámara en tiempo real
@@ -64,6 +74,7 @@ Atlas/
 ├── runtime.txt         # Versión de Python para despliegue
 ├── Procfile            # Comando de inicio en Render
 ├── render.yaml         # Configuración del despliegue en Render
+├── migracion_acepta_terminos.sql  # Migración de consentimiento de datos
 ├── package.json        # Configuración de Electron / electron-builder
 ├── yolov8n.pt          # Pesos base de YOLOv8n
 ├── runs/detect/        # Pesos del modelo entrenado (train-5/best.pt)
@@ -121,6 +132,12 @@ conexion = mysql.connector.connect(
 )
 ```
 
+4. Aplicar la migración del consentimiento de datos (`migracion_acepta_terminos.sql`) si la tabla `usuarios` aún no tiene la columna `acepto_terminos`:
+
+```bash
+mysql -h <host> -u <usuario> -p <basededatos> < migracion_acepta_terminos.sql
+```
+
 ## Ejecución en modo web
 
 ```bash
@@ -162,18 +179,22 @@ Entrena YOLOv8n con el dataset propio. Los pesos se guardan en `runs/detect/`. E
 
 ## Despliegue en Render
 
-Definido en `render.yaml` y `Procfile`. La conexión a la base de datos se realiza mediante variables de entorno cuando está disponible, y Render redespliega automáticamente con cada push a la rama principal.
+Las dos aplicaciones se despliegan como servicios independientes definidos en sus respectivos `render.yaml` y `Procfile`. Render redespliega automáticamente con cada push a la rama principal.
 
+### Sistema principal (atlas)
+- Definido en `render.yaml` y `Procfile` del directorio raíz.
 - **URL de producción:** `https://atlas.onrender.com`
 - **CORS:** configura los orígenes permitidos con la variable de entorno `CORS_ORIGINS` (por defecto incluye el dominio de Render).
 
+### App de usuario (atlas-usuario)
+- Definido en `app-usuario/render.yaml` y `app-usuario/Procfile` (usando `rootDir: app-usuario`).
+- **URL de producción:** `https://atlas-usuario.onrender.com`
+- El **código QR** de la máquina de reciclaje debe apuntar a esta URL para que los usuarios accedan a su cuenta.
+- Las credenciales SMTP se configuran como variables de entorno (`ATLAS_SMTP_USER`, `ATLAS_SMTP_PASS`, etc.).
+
 ## Roles de usuario
 
-| Rol | Descripción |
-|-----|-------------|
-| USUARIO | Acceso al dashboard, escaneo, catálogo y canje |
-| ADMINISTRADOR | Gestión completa del sistema (usuarios, puntos, catálogo, canjes, auditoría) |
-
-Los perfiles de registro (Aprendiz, Instructor, Área Administrativa y Externo) permiten identificar el tipo de usuario dentro de la institución.
-
-autor: Andrés Forero - promesa del desarrollo de software y analítica de datos
+| Rol | Sistema principal | App de usuario |
+|-----|-------------------|----------------|
+| USUARIO | Escaneo, catálogo, canje, dashboard | Dashboard, clasificación, información, gestión de cuenta |
+| ADMINISTRADOR | Gestión completa (usuarios, puntos, catálogo, canjes, auditoría) | Bloqueado: usa el panel del sistema principal |
