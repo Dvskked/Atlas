@@ -105,14 +105,19 @@
                             name="numero_identificacion"
                             placeholder="Ej: 1234567890"
                             min="0"
+                            max="999999999999999"
                             step="1"
                             inputmode="numeric"
                             pattern="[0-9]*"
-                            maxlength="30"
+                            maxlength="15"
                             value="{{ datos.numero_identificacion if datos else '' }}"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 15)"
                             required
                         >
+
+                        <small class="form-hint">
+                            Solo números (máximo 15 dígitos).
+                        </small>
 
                     </div>
 
@@ -149,9 +154,16 @@
                             id="telefono"
                             name="telefono"
                             placeholder="Ej: 3001234567"
-                            maxlength="20"
+                            maxlength="15"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
                             value="{{ datos.telefono if datos else '' }}"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 15)"
                         >
+
+                        <small class="form-hint">
+                            Solo números (máximo 15 dígitos).
+                        </small>
 
                     </div>
 
@@ -228,6 +240,29 @@
                             autocomplete="new-password"
                             required
                         >
+
+                    </div>
+
+
+                    <!-- TÉRMINOS Y CONDICIONES -->
+                    <div class="form-group form-group-checkbox">
+
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                id="acepta_terminos"
+                                name="acepta_terminos"
+                                value="1"
+                                required
+                            >
+                            <span class="checkbox-text">
+                                Acepto los
+                                <a href="#" onclick="abrirTerminos(); return false;">términos y condiciones</a>
+                                de uso y
+                                <a href="#" onclick="abrirTerminos(); return false;">política de privacidad</a>
+                                para el tratamiento de mis datos personales.
+                            </span>
+                        </label>
 
                     </div>
 
@@ -319,6 +354,7 @@
     var usuario = document.getElementById("usuario");
     var contrasena = document.getElementById("contrasena");
     var confirmar = document.getElementById("confirmar_contrasena");
+    var aceptaTerminos = document.getElementById("acepta_terminos");
 
     var enProceso = false;
 
@@ -329,12 +365,25 @@
 
         if (!tieneTexto(nombre.value)) {
             errores.push({ campo: nombre, mensaje: "El nombre completo es obligatorio." });
+        } else if (nombre.value.length > 150) {
+            errores.push({ campo: nombre, mensaje: "El nombre no puede tener más de 150 caracteres." });
         }
 
         if (!tieneTexto(identificacion.value)) {
             errores.push({ campo: identificacion, mensaje: "La identificación es obligatoria." });
         } else if (!/^[0-9]+$/.test(identificacion.value)) {
             errores.push({ campo: identificacion, mensaje: "La identificación solo puede contener números." });
+        } else if (identificacion.value.length > 15) {
+            errores.push({ campo: identificacion, mensaje: "La identificación no puede tener más de 15 dígitos." });
+        }
+
+        var telefono = document.getElementById("telefono");
+        if (telefono && telefono.value.trim() !== "") {
+            if (!/^[0-9]+$/.test(telefono.value)) {
+                errores.push({ campo: telefono, mensaje: "El teléfono solo puede contener números." });
+            } else if (telefono.value.length > 15) {
+                errores.push({ campo: telefono, mensaje: "El teléfono no puede tener más de 15 dígitos." });
+            }
         }
 
         var regexCorreo = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -354,6 +403,10 @@
 
         if (contrasena.value !== confirmar.value) {
             errores.push({ campo: confirmar, mensaje: "Las contraseñas no coinciden." });
+        }
+
+        if (!aceptaTerminos.checked) {
+            errores.push({ campo: aceptaTerminos, mensaje: "Debes aceptar los términos y condiciones." });
         }
 
         errores.forEach(function (e) {
@@ -437,3 +490,93 @@
 </script>
 
 {% endblock %}
+
+<!-- MODAL TÉRMINOS Y CONDICIONES -->
+<div class="modal-overlay" id="modal-terminos">
+    <div class="modal-terminos">
+        <div class="modal-terminos-header">
+            <h3>Términos y Condiciones - Política de Privacidad</h3>
+            <button type="button" class="modal-terminos-close" onclick="cerrarTerminos()">&times;</button>
+        </div>
+        <div class="modal-terminos-body">
+            <h4>1. Información que recopilamos</h4>
+            <p>Al registrarte en Atlas, recopilamos los siguientes datos personales:</p>
+            <ul>
+                <li>Nombre completo</li>
+                <li>Número de identificación</li>
+                <li>Correo electrónico</li>
+                <li>Número de teléfono (opcional)</li>
+                <li>Nombre de usuario</li>
+                <li>Contraseña (almacenada de forma segura como hash, nunca en texto plano)</li>
+            </ul>
+
+            <h4>2. Finalidad del tratamiento</h4>
+            <p>Tus datos personales serán utilizados exclusivamente para:</p>
+            <ul>
+                <li>Gestión de tu cuenta de usuario en la plataforma Atlas.</li>
+                <li>Envío de notificaciones relacionadas con tu actividad de reciclaje.</li>
+                <li>Generación de comprobantes de reciclaje y canje de puntos.</li>
+                <li>Mejora de los servicios del sistema de reciclaje inteligente.</li>
+                <li>Cumplimiento de obligaciones legales cuando aplique.</li>
+            </ul>
+
+            <h4>3. Consentimiento</h4>
+            <p>Al marcar la casilla de aceptación y crear tu cuenta, otorgas tu consentimiento libre, previo, informado y expreso para el tratamiento de tus datos personales conforme a esta política y la normativa vigente en materia de protección de datos personales en Colombia (Ley 1581 de 2012 y su decreto reglamentario 1377 de 2013).</p>
+
+            <h4>4. Seguridad de los datos</h4>
+            <p>Implementamos medidas de seguridad técnicas, administrativas y físicas para proteger tus datos personales contra acceso no autorizado, alteración, divulgación o destrucción. Las contraseñas se almacenan únicamente como hashes criptográficos irreversibles.</p>
+
+            <h4>5. Derechos del titular</h4>
+            <p>De conformidad con la Ley 1581 de 2012, tienes derecho a:</p>
+            <ul>
+                <li>Conocer, actualizar y rectificar tus datos personales.</li>
+                <li>Solicitar prueba de la autorización otorgada.</li>
+                <li>Ser informado sobre el uso de tus datos personales.</li>
+                <li>Revocar la autorización y/o solicitar la supresión de tus datos.</li>
+                <li>Presentar quejas ante la Superintendencia de Industria y Comercio (SIC).</li>
+            </ul>
+
+            <h4>6. Retención de datos</h4>
+            <p>Tus datos personales serán conservados mientras tu cuenta permanezca activa. Si solicitas la eliminación de tu cuenta, tus datos serán eliminados de forma segura en un plazo máximo de 30 días, salvo que la ley exija su conservación por un período mayor.</p>
+
+            <h4>7. Compartición de datos</h4>
+            <p>No compartiremos tus datos personales con terceros, salvo en los siguientes casos:</p>
+            <ul>
+                <li>Cuando exista una obligación legal.</li>
+                <li>Cuando sea necesario para prestar un servicio solicitado por ti.</li>
+                <li>Con tu consentimiento expreso.</li>
+            </ul>
+
+            <h4>8. Cookies y tecnologías similares</h4>
+            <p>Utilizamos cookies estrictamente necesarias para el funcionamiento de la plataforma (sesiones de usuario). No utilizamos cookies de rastreo ni publicitarias.</p>
+
+            <h4>9. Cambios en la política</h4>
+            <p>Nos reservamos el derecho de actualizar esta política de privacidad. Los cambios serán notificados a través de la plataforma o por correo electrónico.</p>
+
+            <h4>10. Contacto</h4>
+            <p>Si tienes preguntas sobre esta política o el tratamiento de tus datos, puedes contactarnos a través de: <strong>siriusplanet76@gmail.com</strong></p>
+        </div>
+        <div class="modal-terminos-footer">
+            <button type="button" class="btn-primary" onclick="aceptarTerminos()">Acepto</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirTerminos() {
+    document.getElementById("modal-terminos").classList.add("visible");
+}
+
+function cerrarTerminos() {
+    document.getElementById("modal-terminos").classList.remove("visible");
+}
+
+function aceptarTerminos() {
+    document.getElementById("acepta_terminos").checked = true;
+    cerrarTerminos();
+}
+
+document.getElementById("modal-terminos").addEventListener("click", function(e) {
+    if (e.target === this) cerrarTerminos();
+});
+</script>

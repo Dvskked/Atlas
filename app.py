@@ -339,8 +339,10 @@ def _plantilla_bienvenida(nombre, usuario, correo, fecha_registro, telefono=""):
                             </h3>
                             <p style="margin:0;color:#555;font-size:13px;line-height:1.7;">
                                 Atlas es un <strong style="color:#1a1a2e;">sistema de gestion inteligente</strong>
-                                disenado para la automatizacion y trazabilidad del reciclaje en la
-                                Universidad Autonoma de Tomina. Utiliza inteligencia artificial (YOLOv8)
+                                disenado para la automatizacion y trazabilidad del reciclaje, creado por
+                                <strong style="color:#1a1a2e;">Andres Forero</strong>, desarrollador semi junior
+                                de software enfocado en el analisis de datos y en el desarrollo de escritorio.
+                                Utiliza inteligencia artificial (YOLOv8)
                                 para detectar botellas PET, tapas y etiquetas en tiempo real, recompensandote
                                 con <strong style="color:#0f3460;">AtlasPuntos</strong> por cada reciclaje.
                             </p>
@@ -423,7 +425,7 @@ def _plantilla_bienvenida(nombre, usuario, correo, fecha_registro, telefono=""):
                                 Atlas - Sistema de Gestion de Reciclaje Inteligente
                             </p>
                             <p style="margin:0;color:#aaa;font-size:10px;">
-                                Universidad Autonoma de Tomina &copy; 2025. Todos los derechos reservados.
+                                Creado por Andres Forero &copy; 2025. Todos los derechos reservados.
                             </p>
                         </td>
                     </tr>
@@ -450,7 +452,7 @@ def _plantilla_bienvenida(nombre, usuario, correo, fecha_registro, telefono=""):
         "  Correo: siriusplanet76@gmail.com\n"
         "  Telefono: +57 3153806797\n\n"
         "Atlas - Sistema de Gestion de Reciclaje Inteligente\n"
-        "Universidad Autonoma de Tomina"
+        "Creado por Andres Forero"
     )
 
     return html, texto_plano
@@ -570,6 +572,7 @@ def register():
         usuario = request.form.get("usuario", "").strip()
         contrasena = request.form.get("contrasena", "")
         confirmar_contrasena = request.form.get("confirmar_contrasena", "")
+        acepta_terminos = request.form.get("acepta_terminos", "")
 
         # Conservamos los datos ingresados para no borrar el formulario
         # cuando ocurre un error de validación.
@@ -604,6 +607,18 @@ def register():
             flash("La identificación debe contener solo números.", "danger")
             return volver_al_formulario()
 
+        if len(numero_identificacion) > 15:
+            flash("La identificación no puede tener más de 15 dígitos.", "danger")
+            return volver_al_formulario()
+
+        if len(nombre_completo) > 150:
+            flash("El nombre completo no puede tener más de 150 caracteres.", "danger")
+            return volver_al_formulario()
+
+        if telefono and (not telefono.isdigit() or len(telefono) > 15):
+            flash("El teléfono solo puede contener números y no puede tener más de 15 dígitos.", "danger")
+            return volver_al_formulario()
+
         # Nombre de usuario seguro: solo letras, números, puntos, guiones.
         if not re.fullmatch(r"[A-Za-z0-9_.-]{3,50}", usuario):
             flash(
@@ -626,6 +641,14 @@ def register():
             flash("Las contraseñas no coinciden.", "danger")
             return volver_al_formulario()
 
+        if acepta_terminos != "1":
+            flash(
+                "Debes aceptar los términos y condiciones y la política "
+                "de tratamiento de datos personales.",
+                "danger"
+            )
+            return volver_al_formulario()
+
         conexion = obtener_conexion()
 
         if conexion is None:
@@ -646,9 +669,10 @@ def register():
                     nombre_completo,
                     correo,
                     telefono,
-                    tipo_usuario
+                    tipo_usuario,
+                    acepto_terminos
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             valores = (
@@ -658,7 +682,8 @@ def register():
                 nombre_completo,
                 correo,
                 telefono or None,
-                "USUARIO"
+                "USUARIO",
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             )
 
             cursor.execute(
@@ -2273,6 +2298,27 @@ def admin_editar_usuario(id_usuario):
         if not numero_identificacion.isdigit():
             flash(
                 "La identificación debe contener solo números.",
+                "danger"
+            )
+            return redirect(url_for("admin_usuarios"))
+
+        if len(numero_identificacion) > 15:
+            flash(
+                "La identificación no puede tener más de 15 dígitos.",
+                "danger"
+            )
+            return redirect(url_for("admin_usuarios"))
+
+        if len(nombre_completo) > 150:
+            flash(
+                "El nombre completo no puede tener más de 150 caracteres.",
+                "danger"
+            )
+            return redirect(url_for("admin_usuarios"))
+
+        if telefono and (not telefono.isdigit() or len(telefono) > 15):
+            flash(
+                "El teléfono solo puede contener números y no puede tener más de 15 dígitos.",
                 "danger"
             )
             return redirect(url_for("admin_usuarios"))
